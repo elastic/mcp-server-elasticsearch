@@ -4,6 +4,10 @@ Connect to your Elasticsearch data directly from any MCP Client (like Claude Des
 
 This server connects agents to your Elasticsearch data using the Model Context Protocol (MCP). It allows you to interact with your Elasticsearch indices through natural language conversations.
 
+<a href="https://glama.ai/mcp/servers/@elastic/mcp-server-elasticsearch">
+  <img width="380" height="200" src="https://glama.ai/mcp/servers/@elastic/mcp-server-elasticsearch/badge" alt="Elasticsearch Server MCP server" />
+</a>
+
 ## Features
 
 * **List Indices**: View all available Elasticsearch indices
