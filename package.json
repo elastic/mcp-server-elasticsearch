@@ -2,7 +2,7 @@
   "name": "@elastic/mcp-server-elasticsearch",
   "description": "Elasticsearch MCP Server",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "author": "Elastic",
   "type": "module",
   "main": "dist/index.js",
