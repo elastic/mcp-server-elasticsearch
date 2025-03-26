@@ -34,9 +34,9 @@
     "@modelcontextprotocol/sdk": "1.7.0"
   },
   "devDependencies": {
-    "@types/node": "^22",
-    "shx": "^0.3.4",
-    "typescript": "^5.6.2"
+    "@types/node": "22.13.13",
+    "shx": "0.3.4",
+    "typescript": "5.8.2"
   },
   "publishConfig": {
     "access": "public"
