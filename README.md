@@ -20,6 +20,10 @@ This server connects agents to your Elasticsearch data using the Model Context P
 * Elasticsearch API key with appropriate permissions
 * MCP Client (e.g. Claude Desktop)
 
+## Demo
+
+https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
+
 ## Installation & Setup
 
 ### Using the Published NPM Package
