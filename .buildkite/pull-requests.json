@@ -1,0 +1,25 @@
+{
+  "jobs": [
+    {
+      "enabled": true,
+      "pipelineSlug": "elastic-mcp-server-elasticsearch",
+      "allow_org_users": true,
+      "allowed_repo_permissions": [
+        "admin",
+        "write"
+      ],
+      "allowed_list": [],
+      "set_commit_status": true,
+      "commit_status_context": "buildkite/elastic-mcp-server-elasticsearch",
+      "build_on_commit": false,
+      "build_on_comment": true,
+      "trigger_comment_regex": "^(?:(?:buildkite\\W+)?(?:build|test)\\W+(?:this|it))",
+      "always_trigger_comment_regex": "^(?:(?:buildkite\\W+)?(?:build|test)\\W+(?:this|it))",
+      "skip_ci_labels": [
+        "skip-ci"
+      ],
+      "skip_target_branches": [],
+      "always_require_ci_on_changed": []
+    }
+  ]
+}
