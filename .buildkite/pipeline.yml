@@ -1,7 +1,27 @@
-agents:
-  provider: "gcp"
-  machineType: "n1-standard-4"
-
+---
+# $yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
 steps:
-  - label: "Test"
-    command: "npm install && npm test"
+  - label: "Triggering pipelines"
+    plugins:
+      monorepo-diff#v1.3.0:
+        diff: ".buildkite/diff ${BUILDKITE_COMMIT}"
+        wait: true
+        watch:
+          # if our Renovate configuration is amended, then make sure we have well-formed config
+          # for more info, see https://docs.elastic.dev/plat-prod-team/service-catalogue/renovate/testing-renovate-changes
+          - path: "renovate.json"
+            config:
+              label: "Verify Renovate configuration"
+              command: "renovate-config-validator"
+              agents:
+                image: "docker.elastic.co/ci-agent-images/pipelib:0.13.0@sha256:190464950de81cb3390bd5e07bb1cc171dd4a765c1ce5de58ebca476f9a6839f"
+          # if our catalog-info.yaml is changed, make sure it's well-formed according to our internal standards as well as Backstage's validation
+          - path: "catalog-info.yaml"
+            config:
+              command: "/agent/check-catalog-info.sh"
+              agents:
+                image: "docker.elastic.co/ci-agent-images/pipelib:0.13.0@sha256:190464950de81cb3390bd5e07bb1cc171dd4a765c1ce5de58ebca476f9a6839f"
+          - default:
+              config:
+                label: ":pipeline: Upload default Pipeline"
+                command: "buildkite-agent pipeline upload .buildkite/default-pipeline.yml"
