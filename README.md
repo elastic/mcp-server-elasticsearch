@@ -4,10 +4,6 @@ Connect to your Elasticsearch data directly from any MCP Client (like Claude Des
 
 This server connects agents to your Elasticsearch data using the Model Context Protocol. It allows you to interact with your Elasticsearch indices through natural language conversations.
 
-<a href="https://glama.ai/mcp/servers/@elastic/mcp-server-elasticsearch">
-  <img width="380" height="200" src="https://glama.ai/mcp/servers/@elastic/mcp-server-elasticsearch/badge" alt="Elasticsearch Server MCP server" />
-</a>
-
 ## Features
 
 * **List Indices**: View all available Elasticsearch indices
@@ -31,8 +27,8 @@ https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
 > [!TIP]
 > The easiest way to use Elasticsearch MCP Server is through the published npm package.
 
-1. **Configure Claude Desktop App**
-   - Open your MCP Client (Claude Desktop)
+1. **Configure MCP Client**
+   - Open your MCP Client. See the [list of MCP Clients](https://modelcontextprotocol.io/clients), here we are configuring Claude Desktop.
    - Go to **Settings > Developer > MCP Servers**
    - Click `Edit Config` and add a new MCP Server with the following configuration:
 
