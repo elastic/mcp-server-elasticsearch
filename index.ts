@@ -2,24 +2,51 @@
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Client, estypes } from "@elastic/elasticsearch";
+import { Client, estypes, ClientOptions } from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import fs from "fs";
 
-// Simplified configuration schema with only URL and API key
-const ConfigSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .min(1, "Elasticsearch URL cannot be empty")
-    .url("Invalid Elasticsearch URL format")
-    .describe("Elasticsearch server URL"),
+// Configuration schema with auth options
+const ConfigSchema = z
+  .object({
+    url: z
+      .string()
+      .trim()
+      .min(1, "Elasticsearch URL cannot be empty")
+      .url("Invalid Elasticsearch URL format")
+      .describe("Elasticsearch server URL"),
 
-  apiKey: z
-    .string()
-    .trim()
-    .min(1, "API key is required")
-    .describe("API key for Elasticsearch authentication"),
-});
+    apiKey: z
+      .string()
+      .optional()
+      .describe("API key for Elasticsearch authentication"),
+
+    username: z
+      .string()
+      .optional()
+      .describe("Username for Elasticsearch authentication"),
+
+    password: z
+      .string()
+      .optional()
+      .describe("Password for Elasticsearch authentication"),
+
+    caCert: z
+      .string()
+      .optional()
+      .describe("Path to custom CA certificate for Elasticsearch"),
+  })
+  .refine(
+    (data) => {
+      // Either apiKey is present, or both username and password are present
+      return !!data.apiKey || (!!data.username && !!data.password);
+    },
+    {
+      message:
+        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
+      path: ["apiKey", "username", "password"],
+    }
+  );
 
 type ElasticsearchConfig = z.infer<typeof ConfigSchema>;
 
@@ -27,14 +54,34 @@ export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
   const validatedConfig = ConfigSchema.parse(config);
-  const { url, apiKey } = validatedConfig;
+  const { url, apiKey, username, password, caCert } = validatedConfig;
 
-  const esClient = new Client({
+  const clientOptions: ClientOptions = {
     node: url,
-    auth: {
-      apiKey: apiKey,
-    },
-  });
+  };
+
+  // Set up authentication
+  if (apiKey) {
+    clientOptions.auth = { apiKey };
+  } else if (username && password) {
+    clientOptions.auth = { username, password };
+  }
+
+  // Set up SSL/TLS certificate if provided
+  if (caCert) {
+    try {
+      const ca = fs.readFileSync(caCert);
+      clientOptions.tls = { ca };
+    } catch (error) {
+      console.error(
+        `Failed to read certificate file: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  }
+
+  const esClient = new Client(clientOptions);
 
   const server = new McpServer({
     name: "elasticsearch-mcp-server",
@@ -274,6 +321,9 @@ export async function createElasticsearchMcpServer(
 const config: ElasticsearchConfig = {
   url: process.env.ES_URL || "",
   apiKey: process.env.ES_API_KEY || "",
+  username: process.env.ES_USERNAME || "",
+  password: process.env.ES_PASSWORD || "",
+  caCert: process.env.ES_CA_CERT || "",
 };
 
 async function main() {
