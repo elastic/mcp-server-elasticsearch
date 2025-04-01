@@ -54,27 +54,6 @@ https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
    }
    ```
 
-   For username/password authentication instead of API key:
-
-   ```json
-   {
-     "mcpServers": {
-       "elasticsearch-mcp-server": {
-         "command": "npx",
-         "args": [
-           "-y",
-           "@elastic/mcp-server-elasticsearch"
-         ],
-         "env": {
-           "ES_URL": "your-elasticsearch-url",
-           "ES_USERNAME": "your-username",
-           "ES_PASSWORD": "your-password"
-         }
-       }
-     }
-   }
-   ```
-
 2. **Start a Conversation**
    - Open a new conversation in your MCP Client
    - The MCP server should connect automatically
@@ -84,6 +63,10 @@ https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
 
 The Elasticsearch MCP Server supports configuration options to connect to your Elasticsearch:
 
+> [!NOTE]
+> You must provide either an API key or both username and password for authentication.
+
+
 | Environment Variable | Description | Required |
 |---------------------|-------------|----------|
 | `ES_URL` | Your Elasticsearch instance URL | Yes |
@@ -91,9 +74,6 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 | `ES_USERNAME` | Elasticsearch username for basic authentication | No |
 | `ES_PASSWORD` | Elasticsearch password for basic authentication | No |
 | `ES_CA_CERT` | Path to custom CA certificate for Elasticsearch SSL/TLS | No |
-
-> [!NOTE]
-> You must provide either an API key or both username and password for authentication.
 
 
 ### Developing Locally
