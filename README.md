@@ -8,16 +8,16 @@ This server connects agents to your Elasticsearch data using the Model Context P
   <img width="380" height="200" src="https://glama.ai/mcp/servers/@elastic/mcp-server-elasticsearch/badge" alt="Elasticsearch Server MCP server" />
 </a>
 
-## Features
+## Available Tools
 
-* **List Indices**: View all available Elasticsearch indices
-* **Get Mappings**: Inspect field mappings for specific indices
-* **Search**: Execute Elasticsearch queries using full Query DSL capabilities with automatic highlighting
+* `list_indices`: List all available Elasticsearch indices
+* `get_mappings`: Get field mappings for a specific Elasticsearch index
+* `search`: Perform an Elasticsearch search with the provided query DSL
 
 ## Prerequisites
 
 * An Elasticsearch instance
-* Elasticsearch API key with appropriate permissions
+* Elasticsearch authentication credentials (API key or username/password)
 * MCP Client (e.g. Claude Desktop)
 
 ## Demo
@@ -54,10 +54,47 @@ https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
    }
    ```
 
+   For username/password authentication instead of API key:
+
+   ```json
+   {
+     "mcpServers": {
+       "elasticsearch-mcp-server": {
+         "command": "npx",
+         "args": [
+           "-y",
+           "@elastic/mcp-server-elasticsearch"
+         ],
+         "env": {
+           "ES_URL": "your-elasticsearch-url",
+           "ES_USERNAME": "your-username",
+           "ES_PASSWORD": "your-password"
+         }
+       }
+     }
+   }
+   ```
+
 2. **Start a Conversation**
    - Open a new conversation in your MCP Client
    - The MCP server should connect automatically
    - You can now ask questions about your Elasticsearch data
+
+### Configuration Options
+
+The Elasticsearch MCP Server supports configuration options to connect to your Elasticsearch:
+
+| Environment Variable | Description | Required |
+|---------------------|-------------|----------|
+| `ES_URL` | Your Elasticsearch instance URL | Yes |
+| `ES_API_KEY` | Elasticsearch API key for authentication | No |
+| `ES_USERNAME` | Elasticsearch username for basic authentication | No |
+| `ES_PASSWORD` | Elasticsearch password for basic authentication | No |
+| `ES_CA_CERT` | Path to custom CA certificate for Elasticsearch SSL/TLS | No |
+
+> [!NOTE]
+> You must provide either an API key or both username and password for authentication.
+
 
 ### Developing Locally
 
@@ -106,7 +143,7 @@ https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
    ES_URL=your-elasticsearch-url ES_API_KEY=your-api-key npm run inspector
    ```
 
-   This will start the MCP Inspector, allowing you to debug and analyze requests. Ensure that the necessary environment variables (`ES_URL` and `ES_API_KEY`) are exposed when starting the inspector. You should see output similar to:
+   This will start the MCP Inspector, allowing you to debug and analyze requests. You should see:
 
    ```bash
    Starting MCP inspector...
@@ -167,10 +204,10 @@ POST /_security/api_key
 
 ## Troubleshooting
 
-
 * Ensure your MCP configuration is correct.
 * Verify that your Elasticsearch URL is accessible from your machine.
-* Check that your API key has the necessary permissions.
+* Check that your authentication credentials (API key or username/password) have the necessary permissions.
+* If using SSL/TLS with a custom CA, verify that the certificate path is correct and the file is readable.
 * Look at the terminal output for error messages.
 
 If you encounter issues, feel free to open an issue on the GitHub repository.
