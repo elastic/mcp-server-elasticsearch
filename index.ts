@@ -315,6 +315,68 @@ export async function createElasticsearchMcpServer(
     }
   );
 
+  // Tool 4: Get shard information
+  server.tool(
+    "get_shards",
+    "Get shard information for all or specific indices",
+    {
+      index: z
+        .string()
+        .optional()
+        .describe("Optional index name to get shard information for"),
+    },
+    async ({ index }) => {
+      try {
+        const response = await esClient.cat.shards({
+          index,
+          format: "json",
+        });
+
+        const shardsInfo = response.map((shard) => ({
+          index: shard.index,
+          shard: shard.shard,
+          prirep: shard.prirep,
+          state: shard.state,
+          docs: shard.docs,
+          store: shard.store,
+          ip: shard.ip,
+          node: shard.node,
+        }));
+
+        const metadataFragment = {
+          type: "text" as const,
+          text: `Found ${shardsInfo.length} shards${index ? ` for index ${index}` : ""}`,
+        };
+
+        return {
+          content: [
+            metadataFragment,
+            {
+              type: "text" as const,
+              text: JSON.stringify(shardsInfo, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error(
+          `Failed to get shard information: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
   return server;
 }
 
