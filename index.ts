@@ -38,13 +38,28 @@ const ConfigSchema = z
   })
   .refine(
     (data) => {
-      // Either apiKey is present, or both username and password are present
-      return !!data.apiKey || (!!data.username && !!data.password);
+      // If username is provided, password must be provided
+      if (data.username) {
+        return !!data.password;
+      }
+
+      // If password is provided, username must be provided
+      if (data.password) {
+        return !!data.username;
+      }
+
+      // If apiKey is provided, it's valid
+      if (data.apiKey) {
+        return true;
+      }
+      
+      // No auth is also valid (for local development)
+      return true;
     },
     {
       message:
-        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
-      path: ["apiKey", "username", "password"],
+        "If username is provided, password must be provided and vice versa",
+      path: ["username", "password"],
     }
   );
 
@@ -298,6 +313,68 @@ export async function createElasticsearchMcpServer(
       } catch (error) {
         console.error(
           `Search failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
+  // Tool 4: Get shard information
+  server.tool(
+    "get_shards",
+    "Get shard information for all or specific indices",
+    {
+      index: z
+        .string()
+        .optional()
+        .describe("Optional index name to get shard information for"),
+    },
+    async ({ index }) => {
+      try {
+        const response = await esClient.cat.shards({
+          index,
+          format: "json",
+        });
+
+        const shardsInfo = response.map((shard) => ({
+          index: shard.index,
+          shard: shard.shard,
+          prirep: shard.prirep,
+          state: shard.state,
+          docs: shard.docs,
+          store: shard.store,
+          ip: shard.ip,
+          node: shard.node,
+        }));
+
+        const metadataFragment = {
+          type: "text" as const,
+          text: `Found ${shardsInfo.length} shards${index ? ` for index ${index}` : ""}`,
+        };
+
+        return {
+          content: [
+            metadataFragment,
+            {
+              type: "text" as const,
+              text: JSON.stringify(shardsInfo, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error(
+          `Failed to get shard information: ${
             error instanceof Error ? error.message : String(error)
           }`
         );
