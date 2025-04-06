@@ -13,6 +13,7 @@ This server connects agents to your Elasticsearch data using the Model Context P
 * `list_indices`: List all available Elasticsearch indices
 * `get_mappings`: Get field mappings for a specific Elasticsearch index
 * `search`: Perform an Elasticsearch search with the provided query DSL
+* `profile_query`: Analyze query performance using Elasticsearch Profile API
 
 ## Prerequisites
 
