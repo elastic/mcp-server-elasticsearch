@@ -36,17 +36,17 @@ const ConfigSchema = z
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
   })
-  // .refine(
-  //   (data) => {
-  //     // Either apiKey is present, or both username and password are present
-  //     return !!data.apiKey || (!!data.username && !!data.password);
-  //   },
-  //   {
-  //     message:
-  //       "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
-  //     path: ["apiKey", "username", "password"],
-  //   }
-  // );
+  .refine(
+    (data) => {
+      // Either apiKey is present, or both username and password are present
+      return !!data.apiKey || (!!data.username && !!data.password);
+    },
+    {
+      message:
+        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
+      path: ["apiKey", "username", "password"],
+    }
+  );
 
 type ElasticsearchConfig = z.infer<typeof ConfigSchema>;
 
