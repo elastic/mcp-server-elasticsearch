@@ -36,17 +36,17 @@ const ConfigSchema = z
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
   })
-  .refine(
-    (data) => {
-      // Either apiKey is present, or both username and password are present
-      return !!data.apiKey || (!!data.username && !!data.password);
-    },
-    {
-      message:
-        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
-      path: ["apiKey", "username", "password"],
-    }
-  );
+  // .refine(
+  //   (data) => {
+  //     // Either apiKey is present, or both username and password are present
+  //     return !!data.apiKey || (!!data.username && !!data.password);
+  //   },
+  //   {
+  //     message:
+  //       "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
+  //     path: ["apiKey", "username", "password"],
+  //   }
+  // );
 
 type ElasticsearchConfig = z.infer<typeof ConfigSchema>;
 
@@ -218,8 +218,20 @@ export async function createElasticsearchMcpServer(
         .describe(
           "Complete Elasticsearch query DSL object that can include query, size, from, sort, etc."
         ),
+
+      profile: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Whether to include query profiling information"),
+
+      explain: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Whether to include explanation of how the query was executed"),
     },
-    async ({ index, queryBody }) => {
+    async ({ index, queryBody, profile, explain }) => {
       try {
         // Get mappings to identify text fields for highlighting
         const mappingResponse = await esClient.indices.getMapping({
@@ -231,6 +243,8 @@ export async function createElasticsearchMcpServer(
         const searchRequest: estypes.SearchRequest = {
           index,
           ...queryBody,
+          profile: profile,
+          explain: explain,
         };
 
         // Always do highlighting
@@ -277,6 +291,10 @@ export async function createElasticsearchMcpServer(
             }
           }
 
+          if (explain && hit._explanation) {
+            content += `\nExplanation:\n${JSON.stringify(hit._explanation, null, 2)}`;
+          }
+
           return {
             type: "text" as const,
             text: content.trim(),
@@ -292,8 +310,18 @@ export async function createElasticsearchMcpServer(
           }, showing ${result.hits.hits.length} from position ${from}`,
         };
 
+        const fragments = [metadataFragment, ...contentFragments];
+
+        if (profile && result.profile) {
+          const profileFragment = {
+            type: "text" as const,
+            text: `\nQuery Profile:\n${JSON.stringify(result.profile, null, 2)}`,
+          };
+          fragments.push(profileFragment);
+        }
+
         return {
-          content: [metadataFragment, ...contentFragments],
+          content: fragments,
         };
       } catch (error) {
         console.error(
@@ -360,171 +388,6 @@ export async function createElasticsearchMcpServer(
       } catch (error) {
         console.error(
           `Failed to get shard information: ${
-            error instanceof Error ? error.message : String(error)
-          }`
-        );
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: `Error: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
-            },
-          ],
-        };
-      }
-    }
-  );
-
-  // Tool 5: Query Profiler
-  server.tool(
-    "profile_query",
-    "Analyze query performance using Elasticsearch Profile API",
-    {
-      index: z
-        .string()
-        .trim()
-        .min(1, "Index name is required")
-        .describe("Name of the Elasticsearch index to profile"),
-
-      queryBody: z
-        .record(z.any())
-        .refine(
-          (val) => {
-            try {
-              JSON.parse(JSON.stringify(val));
-              return true;
-            } catch (e) {
-              return false;
-            }
-          },
-          {
-            message: "queryBody must be a valid Elasticsearch query DSL object",
-          }
-        )
-        .describe("Elasticsearch query DSL to profile"),
-
-      explain: z
-        .boolean()
-        .optional()
-        .default(false)
-        .describe("Whether to include explanation of how the query was executed"),
-    },
-    async ({ index, queryBody, explain }) => {
-      try {
-        const searchRequest = {
-          index,
-          body: {
-            ...queryBody,
-            profile: true,
-            explain: explain,
-          },
-        };
-
-        const response = await esClient.search(searchRequest);
-
-        if (!response.profile) {
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: "No profiling information available. Make sure the index has profiling enabled.",
-              },
-            ],
-          };
-        }
-
-        const profileInfo: {
-          took: number;
-          timed_out: boolean;
-          _shards: any;
-          hits: {
-            total: any;
-            max_score: number | null;
-          };
-          profile: {
-            shards: Array<{
-              id: string;
-              searches: Array<{
-                query: Array<{
-                  type: string;
-                  description: string;
-                  time_in_nanos: number;
-                  breakdown: any;
-                  children?: Array<{
-                    type: string;
-                    description: string;
-                    time_in_nanos: number;
-                    breakdown: any;
-                  }>;
-                }>;
-                rewrite_time: number;
-                collector: Array<{
-                  name: string;
-                  reason: string;
-                  time_in_nanos: number;
-                }>;
-              }>;
-            }>;
-          };
-          explanation?: any;
-        } = {
-          took: response.took,
-          timed_out: response.timed_out,
-          _shards: response._shards,
-          hits: {
-            total: response.hits.total,
-            max_score: response.hits.max_score ?? null,
-          },
-          profile: {
-            shards: response.profile.shards.map((shard) => ({
-              id: shard.id,
-              searches: shard.searches.map((search) => ({
-                query: search.query.map((query) => ({
-                  type: query.type,
-                  description: query.description,
-                  time_in_nanos: query.time_in_nanos,
-                  breakdown: query.breakdown,
-                  children: query.children?.map((child) => ({
-                    type: child.type,
-                    description: child.description,
-                    time_in_nanos: child.time_in_nanos,
-                    breakdown: child.breakdown,
-                  })),
-                })),
-                rewrite_time: search.rewrite_time,
-                collector: search.collector.map((collector) => ({
-                  name: collector.name,
-                  reason: collector.reason,
-                  time_in_nanos: collector.time_in_nanos,
-                })),
-              })),
-            })),
-          },
-        };
-
-        if (explain && response.hits.hits[0]?._explanation) {
-          profileInfo.explanation = response.hits.hits[0]._explanation;
-        }
-
-        const metadataFragment = {
-          type: "text" as const,
-          text: `Query profiling results for index ${index}`,
-        };
-
-        return {
-          content: [
-            metadataFragment,
-            {
-              type: "text" as const,
-              text: JSON.stringify(profileInfo, null, 2),
-            },
-          ],
-        };
-      } catch (error) {
-        console.error(
-          `Failed to profile query: ${
             error instanceof Error ? error.message : String(error)
           }`
         );
