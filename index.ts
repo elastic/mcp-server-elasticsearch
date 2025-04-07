@@ -58,7 +58,7 @@ const ConfigSchema = z
     },
     {
       message:
-        "If username is provided, password must be provided and vice versa",
+        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided, or no auth for local development",
       path: ["username", "password"],
     }
   );
