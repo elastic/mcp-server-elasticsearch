@@ -20,7 +20,10 @@
     "mcp-server"
   ],
   "files": [
-    "dist"
+    "dist",
+    "NOTICE.txt",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
