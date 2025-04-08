@@ -399,6 +399,133 @@ export async function createElasticsearchMcpServer(
     }
   );
 
+  // Tool 5: Create Index
+  server.tool(
+    "create_index",
+    "Create a new Elasticsearch index with mappings. Accepts natural language descriptions or DDL statements.",
+    {
+      index: z
+        .string()
+        .trim()
+        .min(1, "Index name is required")
+        .describe("Name of the index to create"),
+
+      mappings: z
+        .record(z.any())
+        .describe(`
+Elasticsearch mappings in one of the following formats:
+
+1. Natural Language Description:
+"Create a user table with:
+- id: integer field for user identification
+- name: text field searchable in Korean
+- email: keyword field for exact matching
+- created_at: date field for creation timestamp"
+
+2. MySQL DDL:
+"CREATE TABLE users (
+  id INT PRIMARY KEY,
+  name VARCHAR(255),
+  email VARCHAR(255),
+  created_at TIMESTAMP
+);"
+
+3. Elasticsearch Mapping (Final Format):
+{
+  "properties": {
+    "id": { "type": "integer" },
+    "name": { "type": "text", "analyzer": "korean" },
+    "email": { "type": "keyword" },
+    "created_at": { "type": "date" }
+  }
+}
+
+Note: If you provide format 1 or 2, the LLM will automatically convert it to format 3.
+`),
+
+      settings: z
+        .record(z.any())
+        .optional()
+        .describe(
+          "Optional index settings (e.g., number_of_shards, number_of_replicas)"
+        ),
+
+      analyzer: z
+        .string()
+        .optional()
+        .describe("Optional custom analyzer configuration for text fields"),
+    },
+    async ({ index, mappings, settings, analyzer }) => {
+      try {
+        // Check if index already exists
+        const exists = await esClient.indices.exists({ index });
+        if (exists) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: `Index ${index} already exists. Please choose a different name or delete the existing index first.`,
+              },
+            ],
+          };
+        }
+
+        // Create index with mappings
+        const createResponse = await esClient.indices.create({
+          index,
+          body: {
+            settings: {
+              ...settings,
+              analysis: analyzer
+                ? {
+                    analyzer: {
+                      custom_analyzer: {
+                        type: "custom",
+                        tokenizer: "standard",
+                        filter: ["lowercase", "stop"],
+                      },
+                    },
+                  }
+                : undefined,
+            },
+            mappings: mappings
+          },
+        });
+
+        const metadataFragment = {
+          type: "text" as const,
+          text: `Index ${index} created successfully with the following configuration:`,
+        };
+
+        return {
+          content: [
+            metadataFragment,
+            {
+              type: "text" as const,
+              text: JSON.stringify(createResponse, null, 2),
+            },
+          ],
+        };
+      } catch (error) {
+        console.error(
+          `Failed to create index: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
   return server;
 }
 
