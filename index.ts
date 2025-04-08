@@ -451,9 +451,37 @@ Note: If you provide format 1 or 2, the LLM will automatically convert it to for
         ),
 
       analyzer: z
-        .string()
+        .record(z.any())
         .optional()
-        .describe("Optional custom analyzer configuration for text fields"),
+        .describe(`
+Elasticsearch analyzer configuration in one of the following formats:
+
+1. Natural Language Description:
+"Create a Korean text analyzer with:
+- type: standard
+- stopwords: Korean stopwords
+- tokenizer: standard"
+
+2. JSON Format:
+{
+  "korean": {
+    "type": "standard",
+    "stopwords": "_korean_"
+  }
+}
+
+3. Elasticsearch Analyzer (Final Format):
+{
+  "analyzer": {
+    "korean": {
+      "type": "standard",
+      "stopwords": "_korean_"
+    }
+  }
+}
+
+Note: If you provide format 1 or 2, the LLM will automatically convert it to format 3.
+`),
     },
     async ({ index, mappings, settings, analyzer }) => {
       try {
@@ -479,12 +507,8 @@ Note: If you provide format 1 or 2, the LLM will automatically convert it to for
               analysis: analyzer
                 ? {
                     analyzer: {
-                      custom_analyzer: {
-                        type: "custom",
-                        tokenizer: "standard",
-                        filter: ["lowercase", "stop"],
-                      },
-                    },
+                      ...analyzer
+                    }
                   }
                 : undefined,
             },
