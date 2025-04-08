@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+/*
+ * Copyright Elasticsearch B.V. and contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { Client, estypes, ClientOptions } from "@elastic/elasticsearch";
@@ -52,7 +57,7 @@ const ConfigSchema = z
       if (data.apiKey) {
         return true;
       }
-      
+
       // No auth is also valid (for local development)
       return true;
     },
@@ -360,7 +365,9 @@ export async function createElasticsearchMcpServer(
 
         const metadataFragment = {
           type: "text" as const,
-          text: `Found ${shardsInfo.length} shards${index ? ` for index ${index}` : ""}`,
+          text: `Found ${shardsInfo.length} shards${
+            index ? ` for index ${index}` : ""
+          }`,
         };
 
         return {
