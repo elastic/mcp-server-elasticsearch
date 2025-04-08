@@ -14,6 +14,7 @@ This server connects agents to your Elasticsearch data using the Model Context P
 * `get_mappings`: Get field mappings for a specific Elasticsearch index
 * `search`: Perform an Elasticsearch search with the provided query DSL
 * `get_shards`: Get shard information for all or specific indices
+* `create_index`: Create a new Elasticsearch index with mappings and settings
 
 ## Prerequisites
 
@@ -146,6 +147,7 @@ We welcome contributions from the community! For details on how to contribute, p
 * "Show me the field mappings for the 'products' index."
 * "Find all orders over $500 from last month."
 * "Which products received the most 5-star reviews?"
+* "Create a new index for users with fields for id, name, email, and created_at."
 
 ## How It Works
 
