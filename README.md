@@ -133,6 +133,10 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
    🔍 MCP Inspector is up and running at http://localhost:5173 🚀
    ```
 
+## Contributing
+
+We welcome contributions from the community! For details on how to contribute, please see [Contributing Guidelines](/docs/CONTRIBUTING.md).
+
 ## Example Questions
 
 > [!TIP]
@@ -182,6 +186,10 @@ POST /_security/api_key
   }
 }
 ```
+
+## License
+
+This project is licensed under the Apache License 2.0.
 
 ## Troubleshooting
 
