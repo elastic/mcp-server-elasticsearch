@@ -1,13 +1,17 @@
-## Contributing
+# Contributing
+
+[fork]: https://github.com/elastic/mcp-server-elasticsearch/fork
+[pr]: https://github.com/elastic/mcp-server-elasticsearch/compare
+[code-of-conduct]: https://www.elastic.co/community/codeofconduct
 
 Elasticsearch MCP Server client is open source and we love to receive contributions from our community — you!
 
 There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports and feature requests or writing code.
 
 
-Contributions are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's license](LICENSE).
+Contributions are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's license](../LICENSE).
 
-Please note that this project follows the [Elastic's Open Source Community Code of Conduct][https://www.elastic.co/community/codeofconduct].
+Please note that this project follows the [Elastic's Open Source Community Code of Conduct][code-of-conduct].
 
 ## Development Setup
 
@@ -38,7 +42,8 @@ You can use either:
    - Elasticsearch: http://localhost:9200
    - Kibana: http://localhost:5601
 
-   > **Note:** The `start-local` setup is for development only. It uses basic authentication and disables HTTPS.
+> [!NOTE]
+> The `start-local` setup is for development only. It uses basic authentication and disables HTTPS.
 
 ## Development Workflow
 
@@ -70,4 +75,4 @@ You can use either:
 
 - [How to Contribute to Open Source](https://opensource.guide/how-to-contribute/)
 - [Using Pull Requests](https://help.github.com/articles/about-pull-requests/)
-- [Elastic Code of Conduct][https://www.elastic.co/community/codeofconduct]
+- [Elastic Code of Conduct][code-of-conduct]
