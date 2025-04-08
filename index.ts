@@ -38,13 +38,28 @@ const ConfigSchema = z
   })
   .refine(
     (data) => {
-      // Either apiKey is present, or both username and password are present
-      return !!data.apiKey || (!!data.username && !!data.password);
+      // If username is provided, password must be provided
+      if (data.username) {
+        return !!data.password;
+      }
+
+      // If password is provided, username must be provided
+      if (data.password) {
+        return !!data.username;
+      }
+
+      // If apiKey is provided, it's valid
+      if (data.apiKey) {
+        return true;
+      }
+      
+      // No auth is also valid (for local development)
+      return true;
     },
     {
       message:
-        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided",
-      path: ["apiKey", "username", "password"],
+        "Either ES_API_KEY or both ES_USERNAME and ES_PASSWORD must be provided, or no auth for local development",
+      path: ["username", "password"],
     }
   );
 

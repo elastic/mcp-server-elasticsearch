@@ -2,7 +2,7 @@
   "jobs": [
     {
       "enabled": true,
-      "pipelineSlug": "elastic-mcp-server-elasticsearch",
+      "pipelineSlug": "mcp-server-elasticsearch",
       "allow_org_users": true,
       "allowed_repo_permissions": [
         "admin",
@@ -10,7 +10,7 @@
       ],
       "allowed_list": [],
       "set_commit_status": true,
-      "commit_status_context": "buildkite/elastic-mcp-server-elasticsearch",
+      "commit_status_context": "buildkite/mcp-server-elasticsearch",
       "build_on_commit": false,
       "build_on_comment": true,
       "trigger_comment_regex": "^(?:(?:buildkite\\W+)?(?:build|test)\\W+(?:this|it))",
