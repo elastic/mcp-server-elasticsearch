@@ -13,7 +13,7 @@ Contributions are [released](https://help.github.com/articles/github-terms-of-se
 
 Please note that this project follows the [Elastic's Open Source Community Code of Conduct][code-of-conduct].
 
-## Development Setup
+## Setup
 
 1. Install Node.js 18+ (using [nvm](https://github.com/nvm-sh/nvm) is recommended)
    ```bash
@@ -28,7 +28,7 @@ Please note that this project follows the [Elastic's Open Source Community Code 
    npm run build
    ```
 
-## Elasticsearch for Local Development
+## Start Elasticsearch
 
 You can use either:
 
@@ -54,7 +54,8 @@ You can use either:
    ```bash
    ES_URL=your-elasticsearch-url ES_API_KEY=your-api-key npm run inspector
    ```
-5. Push to your fork and [submit a pull request][pr]
+5. [Test with MCP Client](../README.md#developing-locally)
+6. Push to your fork and [submit a pull request][pr]
 
 ## Best Practices
 
