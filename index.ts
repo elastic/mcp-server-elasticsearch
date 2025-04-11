@@ -112,10 +112,19 @@ export async function createElasticsearchMcpServer(
   server.tool(
     "list_indices",
     "List all available Elasticsearch indices",
-    {},
-    async () => {
+    {
+      indexPattern: z
+        .string()
+        .trim()
+        .min(1, "Index pattern is required")
+        .describe("Index pattern of Elasticsearch indices to list"),
+    },
+    async ( {indexPattern} ) => {
       try {
-        const response = await esClient.cat.indices({ format: "json" });
+        const response = await esClient.cat.indices({ 
+          index: indexPattern, 
+          format: "json" 
+        });
 
         const indicesInfo = response.map((index) => ({
           index: index.index,
