@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "@types/node": "22.13.15",
-    "license-checker": "^25.0.1",
+    "license-checker": "25.0.1",
     "shx": "0.4.0",
     "typescript": "5.8.3"
   },
