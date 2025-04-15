@@ -1,4 +1,5 @@
 # Elasticsearch MCP Server
+[![smithery badge](https://smithery.ai/badge/@elastic/mcp-server-elasticsearch)](https://smithery.ai/server/@elastic/mcp-server-elasticsearch)
 
 Connect to your Elasticsearch data directly from any MCP Client (like Claude Desktop) using the Model Context Protocol (MCP).
 
@@ -26,6 +27,14 @@ This server connects agents to your Elasticsearch data using the Model Context P
 https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
 
 ## Installation & Setup
+
+### Installing via Smithery
+
+To install Elasticsearch MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@elastic/mcp-server-elasticsearch):
+
+```bash
+npx -y @smithery/cli install @elastic/mcp-server-elasticsearch --client claude
+```
 
 ### Using the Published NPM Package
 
