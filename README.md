@@ -70,6 +70,7 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 
 | Environment Variable | Description | Required |
 |---------------------|-------------|----------|
+| `SSE_ADDR` | Enable SSE and set the ADDR | No |
 | `ES_URL` | Your Elasticsearch instance URL | Yes |
 | `ES_API_KEY` | Elasticsearch API key for authentication | No |
 | `ES_USERNAME` | Elasticsearch username for basic authentication | No |
