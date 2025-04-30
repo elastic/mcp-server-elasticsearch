@@ -311,9 +311,18 @@ export async function createElasticsearchMcpServer(
               : result.hits.total?.value || 0
           }, showing ${result.hits.hits.length} from position ${from}`,
         };
+        // Check if there are any aggregations in the result and include them
+        const aggregationsFragment = result.aggregations 
+          ? {
+              type: "text" as const,
+              text: `Aggregations: ${JSON.stringify(result.aggregations, null, 2)}`,
+            }
+          : null;
 
         return {
-          content: [metadataFragment, ...contentFragments],
+          content: aggregationsFragment 
+            ? [metadataFragment, aggregationsFragment, ...contentFragments]
+            : [metadataFragment, ...contentFragments],
         };
       } catch (error) {
         console.error(
