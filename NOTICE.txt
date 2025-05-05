@@ -213,7 +213,7 @@ Apache License
 
 -------------------------------------------------------------------
 Package: @elastic/mcp-server-elasticsearch
-Version: 0.1.1
+Version: 0.1.2
 License: Apache-2.0
 Author: Elastic
 
@@ -629,7 +629,7 @@ Apache License
 
 -------------------------------------------------------------------
 Package: @modelcontextprotocol/sdk
-Version: 1.8.0
+Version: 1.10.2
 License: MIT
 Author: Anthropic, PBC
 
@@ -5694,7 +5694,7 @@ THE SOFTWARE.
 
 -------------------------------------------------------------------
 Package: pkce-challenge
-Version: 4.1.0
+Version: 5.0.0
 License: MIT
 Author: crouchcd
 
