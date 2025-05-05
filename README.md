@@ -14,7 +14,8 @@ This server connects agents to your Elasticsearch data using the Model Context P
 
 * `list_indices`: List all available Elasticsearch indices
 * `get_mappings`: Get field mappings for a specific Elasticsearch index
-* `search`: Perform an Elasticsearch search with the provided query DSL
+* `search`: Perform an Elasticsearch search with the provided query DSL (with automatic highlighting of text fields)
+* `execute_es_api`: Execute any Elasticsearch API endpoint directly
 * `get_shards`: Get shard information for all or specific indices
 
 ## Prerequisites
@@ -22,6 +23,10 @@ This server connects agents to your Elasticsearch data using the Model Context P
 * An Elasticsearch instance
 * Elasticsearch authentication credentials (API key or username/password)
 * MCP Client (e.g. Claude Desktop)
+
+## Version
+
+Current version: 0.1.2
 
 ## Demo
 

@@ -198,7 +198,7 @@ export async function createElasticsearchMcpServer(
 
   const server = new McpServer({
     name: "elasticsearch-mcp-server",
-    version: "0.1.1",
+    version: "0.1.2",
   });
 
   // Tool 1: List indices
