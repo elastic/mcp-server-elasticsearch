@@ -70,6 +70,96 @@ const ConfigSchema = z
 
 type ElasticsearchConfig = z.infer<typeof ConfigSchema>;
 
+// 添加ML相关类型定义
+// Add ML related type definitions
+interface MlJobStats {
+  processed_record_count?: number;
+  processed_field_count?: number;
+  input_bytes?: number;
+  input_field_count?: number;
+  invalid_date_count?: number;
+  missing_field_count?: number;
+  out_of_order_timestamp_count?: number;
+  empty_bucket_count?: number;
+  sparse_bucket_count?: number;
+}
+
+interface ExtendedMlJob {
+  job_id: string;
+  description?: string;
+  create_time?: string;
+  finished_time?: string;
+  model_snapshot_id?: string;
+  job_state?: string;
+  data_counts?: MlJobStats;
+}
+
+// ML Job Creation Types
+interface DetectorConfig {
+  detector_description?: string;
+  function: string;
+  field_name?: string;
+  by_field_name?: string;
+  over_field_name?: string;
+  partition_field_name?: string;
+  use_null?: boolean;
+  exclude_frequent?: "all" | "none" | "by" | "over";
+}
+
+interface AnalysisConfig {
+  bucket_span: string;
+  detectors: DetectorConfig[];
+  influencers?: string[];
+  summary_count_field_name?: string;
+  categorization_field_name?: string;
+  categorization_filters?: string[];
+  latency?: string;
+  multivariate_by_fields?: boolean;
+}
+
+interface DataDescription {
+  time_field: string;
+  time_format?: string;
+  field_delimiter?: string;
+  format?: string;
+}
+
+interface AnalysisLimits {
+  model_memory_limit?: string;
+  categorization_examples_limit?: number;
+}
+
+interface ModelPlotConfig {
+  enabled: boolean;
+  annotations_enabled?: boolean;
+  terms?: string[];
+}
+
+interface DatafeedConfig {
+  indices: string[];
+  query?: Record<string, any>;
+  runtime_mappings?: Record<string, any>;
+  datafeed_id?: string;
+  scroll_size?: number;
+  frequency?: string;
+  delayed_data_check_config?: {
+    enabled: boolean;
+    check_window?: string;
+  };
+}
+
+interface CreateMlJobRequest {
+  analysis_config: AnalysisConfig;
+  data_description: DataDescription;
+  description?: string;
+  groups?: string[];
+  analysis_limits?: AnalysisLimits;
+  model_plot_config?: ModelPlotConfig;
+  results_index_name?: string;
+  allow_lazy_open?: boolean;
+  datafeed_config?: DatafeedConfig;
+}
+
 export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
@@ -78,6 +168,9 @@ export async function createElasticsearchMcpServer(
 
   const clientOptions: ClientOptions = {
     node: url,
+    maxRetries: 5,
+    requestTimeout: 60000, // 60 seconds
+    compression: true
   };
 
   // Set up authentication
@@ -251,6 +344,7 @@ export async function createElasticsearchMcpServer(
         const searchRequest: estypes.SearchRequest = {
           index,
           ...queryBody,
+          timeout: '30s' // Set timeout for specific queries
         };
 
         // Always do highlighting
@@ -312,8 +406,20 @@ export async function createElasticsearchMcpServer(
           }, showing ${result.hits.hits.length} from position ${from}`,
         };
 
+        let aggregationFragments = [];
+        if (result.aggregations) {
+          aggregationFragments.push({
+            type: "text" as const,
+            text: `Aggregation results:\n${JSON.stringify(result.aggregations, null, 2)}`,
+          });
+        }
+
         return {
-          content: [metadataFragment, ...contentFragments],
+          content: [
+            metadataFragment,
+            ...aggregationFragments,
+            ...contentFragments,
+          ],
         };
       } catch (error) {
         console.error(
@@ -335,47 +441,126 @@ export async function createElasticsearchMcpServer(
     }
   );
 
-  // Tool 4: Get shard information
+
+  // Tool 4: Execute any Elasticsearch API
+  server.tool(
+    "execute_es_api",
+    "Execute any Elasticsearch API endpoint directly",
+    {
+      method: z
+        .enum(["GET", "POST", "PUT", "DELETE", "HEAD"])
+        .describe("HTTP method to use for the request"),
+      path: z
+        .string()
+        .trim()
+        .min(1)
+        .describe("The API endpoint path (e.g., '_search', 'my_index/_search', '_cluster/health')"),
+      params: z
+        .record(z.any())
+        .optional()
+        .describe("Optional URL parameters for the request"),
+      body: z
+        .record(z.any())
+        .optional()
+        .describe("Optional request body as a JavaScript object"),
+      headers: z
+        .record(z.string())
+        .optional()
+        .describe("Optional HTTP headers for the request")
+    },
+    async ({ method, path, params, body, headers }) => {
+      try {
+        // Sanitize the path (remove leading slash if present)
+        const sanitizedPath = path.startsWith('/') ? path.substring(1) : path;
+        
+        // Ensure Content-Type is set correctly
+        let customHeaders = headers || {};
+        if (body && !customHeaders['Content-Type']) {
+          customHeaders['Content-Type'] = 'application/json';
+        }
+        
+        // Prepare the request options
+        const options: any = {
+          method,
+          path: sanitizedPath,
+          querystring: params || {},
+          body: body || undefined,
+          headers: customHeaders
+        };
+
+        // Execute the request
+        const response = await esClient.transport.request(options);
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Successfully executed ${method} request to ${path}`
+            },
+            {
+              type: "text" as const,
+              text: JSON.stringify(response, null, 2)
+            }
+          ]
+        };
+      } catch (error) {
+        console.error(
+          `Elasticsearch API request failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        
+        // Extract and format error details if available
+        let errorDetails = "";
+        if (error instanceof Error && 'meta' in error && error.meta) {
+          const meta = error.meta as any;
+          if (meta.body) {
+            errorDetails = `\nError details: ${JSON.stringify(meta.body, null, 2)}`;
+          }
+        }
+        
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }${errorDetails}`
+            }
+          ]
+        };
+      }
+    }
+  );
+
+  // Tool 5: Get shard information
   server.tool(
     "get_shards",
-    "Get shard information for all or specific indices",
+    "Get detailed shard information for indices",
     {
       index: z
         .string()
         .optional()
-        .describe("Optional index name to get shard information for"),
+        .describe("Optional index name to filter results. If not provided, shows shards for all indices"),
     },
     async ({ index }) => {
       try {
-        const response = await esClient.cat.shards({
-          index,
-          format: "json",
-        });
+        const params: any = { format: "json" };
+        if (index) {
+          params.index = index;
+        }
 
-        const shardsInfo = response.map((shard) => ({
-          index: shard.index,
-          shard: shard.shard,
-          prirep: shard.prirep,
-          state: shard.state,
-          docs: shard.docs,
-          store: shard.store,
-          ip: shard.ip,
-          node: shard.node,
-        }));
-
-        const metadataFragment = {
-          type: "text" as const,
-          text: `Found ${shardsInfo.length} shards${
-            index ? ` for index ${index}` : ""
-          }`,
-        };
+        const response = await esClient.cat.shards(params);
 
         return {
           content: [
-            metadataFragment,
             {
               type: "text" as const,
-              text: JSON.stringify(shardsInfo, null, 2),
+              text: `Shard information${index ? ` for index: ${index}` : ''}`,
+            },
+            {
+              type: "text" as const,
+              text: JSON.stringify(response, null, 2),
             },
           ],
         };
