@@ -1,5 +1,7 @@
 # Elasticsearch MCP Server
 
+This repository contains experimental features intended for research and evaluation and are not production-ready.
+
 Connect to your Elasticsearch data directly from any MCP Client (like Claude Desktop) using the Model Context Protocol (MCP).
 
 This server connects agents to your Elasticsearch data using the Model Context Protocol. It allows you to interact with your Elasticsearch indices through natural language conversations.
