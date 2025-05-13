@@ -38,16 +38,16 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^8.17.1",
-    "@modelcontextprotocol/sdk": "1.8.0"
+    "@modelcontextprotocol/sdk": "1.10.2"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
-    "@types/node": "22.13.15",
-    "license-checker": "^25.0.1",
+    "@types/node": "22.14.1",
+    "license-checker": "25.0.1",
     "shx": "0.4.0",
-    "typescript": "5.8.2"
+    "typescript": "5.8.3"
   },
   "publishConfig": {
     "access": "public"
