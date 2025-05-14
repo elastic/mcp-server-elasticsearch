@@ -37,8 +37,8 @@
     "generate-notice": "node ./scripts/generate-notice.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.17.1",
-    "@modelcontextprotocol/sdk": "1.10.2"
+    "@elastic/elasticsearch": "^9.0.0",
+    "@modelcontextprotocol/sdk": "1.11.2"
   },
   "engines": {
     "node": ">=18"
