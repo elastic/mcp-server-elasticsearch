@@ -16,12 +16,29 @@ This server connects agents to your Elasticsearch data using the Model Context P
 * `get_mappings`: Get field mappings for a specific Elasticsearch index
 * `search`: Perform an Elasticsearch search with the provided query DSL
 * `get_shards`: Get shard information for all or specific indices
+* `document_manage`: Perform CRUD operations (Create, Read, Update, Delete) on Elasticsearch documents
 
 ## Prerequisites
 
 * An Elasticsearch instance
 * Elasticsearch authentication credentials (API key or username/password)
 * MCP Client (e.g. Claude Desktop)
+
+### Testing with Mock Data
+
+For testing purposes, this repository includes a script to create mock data with three indices and sample records.
+
+1. Start Elasticsearch locally (you can use `curl -fsSL https://elastic.co/start-local | sh` for a quick setup)
+2. Run the mock data script with your Elasticsearch credentials:
+   ```bash
+   chmod +x create_mock_data.sh
+   ES_PASSWORD=your_password ./create_mock_data.sh
+   ```
+   You can also customize the URL and username if needed:
+   ```bash
+   ES_URL=http://localhost:9200 ES_USERNAME=elastic ES_PASSWORD=your_password ./create_mock_data.sh
+   ```
+3. This will create three indices (`customers`, `products`, and `orders`) with 5 records each, allowing you to test all features including the document management tool
 
 ## Demo
 
@@ -148,6 +165,10 @@ We welcome contributions from the community! For details on how to contribute, p
 * "Show me the field mappings for the 'products' index."
 * "Find all orders over $500 from last month."
 * "Which products received the most 5-star reviews?"
+* "Create a new document in the 'customers' index with this data."
+* "Get the document with ID '12345' from the 'orders' index."
+* "Update the customer profile for ID '1000' with this new information."
+* "Delete the product with ID 'discontinued-item' from the catalog."
 
 ## How It Works
 
