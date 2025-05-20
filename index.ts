@@ -399,6 +399,233 @@ export async function createElasticsearchMcpServer(
     }
   );
 
+  // Tool 5: Document Management (CRUD operations)
+  server.tool(
+    "document_manage",
+    "Perform CRUD operations (Create, Read, Update, Delete) on Elasticsearch documents",
+    {
+      operation: z
+        .enum(["create", "read", "update", "delete"])
+        .describe("The CRUD operation to perform"),
+
+      index: z
+        .string()
+        .trim()
+        .min(1, "Index name is required")
+        .describe("Name of the Elasticsearch index to operate on"),
+
+      id: z
+        .string()
+        .trim()
+        .min(1, "Document ID is required")
+        .describe("ID of the document to operate on"),
+
+      document: z
+        .record(z.any())
+        .optional()
+        .refine(
+          (val) => {
+            if (!val) return true; // Optional field can be undefined
+            try {
+              JSON.parse(JSON.stringify(val));
+              return true;
+            } catch (e) {
+              return false;
+            }
+          },
+          {
+            message: "document must be a valid JSON object",
+          }
+        )
+        .describe("Document data for create/update operations (required for create/update operations)"),
+    },
+    async ({ operation, index, id, document }) => {
+      try {
+        // Validate required parameters based on operation
+        if ((operation === "create" || operation === "update") && !document) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "Error: Document data is required for create/update operations",
+              },
+            ],
+          };
+        }
+
+        let result;
+        switch (operation) {
+          case "create":
+            result = await esClient.index({
+              index,
+              id,
+              document,
+              refresh: true,
+            });
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Document created successfully with ID: ${result._id}`,
+                },
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    {
+                      result: result.result,
+                      index: result._index,
+                      id: result._id,
+                      version: result._version,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+
+          case "read":
+            try {
+              result = await esClient.get({
+                index,
+                id,
+              });
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: `Document found with ID: ${result._id}`,
+                  },
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify(
+                      {
+                        index: result._index,
+                        id: result._id,
+                        version: result._version,
+                        source: result._source,
+                      },
+                      null,
+                      2
+                    ),
+                  },
+                ],
+              };
+            } catch (error: any) {
+              if (error?.statusCode === 404) {
+                return {
+                  content: [
+                    {
+                      type: "text" as const,
+                      text: `Document with ID ${id} not found in index ${index}`,
+                    },
+                  ],
+                };
+              }
+              throw error; // Re-throw for other errors to be caught by outer catch
+            }
+
+          case "update":
+            result = await esClient.update({
+              index,
+              id,
+              doc: document,
+              refresh: true,
+            });
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Document updated successfully with ID: ${result._id}`,
+                },
+                {
+                  type: "text" as const,
+                  text: JSON.stringify(
+                    {
+                      result: result.result,
+                      index: result._index,
+                      id: result._id,
+                      version: result._version,
+                    },
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
+
+          case "delete":
+            try {
+              result = await esClient.delete({
+                index,
+                id,
+                refresh: true,
+              });
+              return {
+                content: [
+                  {
+                    type: "text" as const,
+                    text: `Document deleted successfully with ID: ${id}`,
+                  },
+                  {
+                    type: "text" as const,
+                    text: JSON.stringify(
+                      {
+                        result: result.result,
+                        index: result._index,
+                        id: result._id,
+                        version: result._version,
+                      },
+                      null,
+                      2
+                    ),
+                  },
+                ],
+              };
+            } catch (error: any) {
+              if (error?.statusCode === 404) {
+                return {
+                  content: [
+                    {
+                      type: "text" as const,
+                      text: `Document with ID ${id} not found in index ${index}`,
+                    },
+                  ],
+                };
+              }
+              throw error; // Re-throw for other errors to be caught by outer catch
+            }
+
+          default:
+            return {
+              content: [
+                {
+                  type: "text" as const,
+                  text: `Error: Unsupported operation: ${operation}`,
+                },
+              ],
+            };
+        }
+      } catch (error) {
+        console.error(
+          `Document operation failed: ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Error: ${
+                error instanceof Error ? error.message : String(error)
+              }`,
+            },
+          ],
+        };
+      }
+    }
+  );
+
   return server;
 }
 
