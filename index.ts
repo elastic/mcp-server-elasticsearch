@@ -11,6 +11,13 @@ import { Client, estypes, ClientOptions } from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs";
 
+// Product metadata, used to generate the request User-Agent header and 
+// passed to the McpServer constructor.
+const product = {
+  name: "elasticsearch-mcp-server",
+  version: "0.1.1",
+};
+
 // Configuration schema with auth options
 const ConfigSchema = z
   .object({
@@ -78,6 +85,9 @@ export async function createElasticsearchMcpServer(
 
   const clientOptions: ClientOptions = {
     node: url,
+    headers: {
+      "user-agent": `${product.name}/${product.version}`,
+    },
   };
 
   // Set up authentication
@@ -103,10 +113,7 @@ export async function createElasticsearchMcpServer(
 
   const esClient = new Client(clientOptions);
 
-  const server = new McpServer({
-    name: "elasticsearch-mcp-server",
-    version: "0.1.1",
-  });
+  const server = new McpServer(product);
 
   // Tool 1: List indices
   server.tool(
