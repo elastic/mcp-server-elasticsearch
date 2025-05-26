@@ -7,13 +7,13 @@
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { 
-  Client, 
-  estypes, 
-  ClientOptions, 
+import {
+  Client,
+  estypes,
+  ClientOptions,
   Transport,
   TransportRequestOptions,
-  TransportRequestParams 
+  TransportRequestParams,
 } from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs";
@@ -22,7 +22,10 @@ import fs from "fs";
 class CustomTransport extends Transport {
   private readonly pathPrefix: string;
 
-  constructor(opts: ConstructorParameters<typeof Transport>[0], pathPrefix: string) {
+  constructor(
+    opts: ConstructorParameters<typeof Transport>[0],
+    pathPrefix: string
+  ) {
     super(opts);
     this.pathPrefix = pathPrefix;
   }
@@ -65,11 +68,14 @@ const ConfigSchema = z
       .string()
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
-    
-    pathPrefix: z
+
+    pathPrefix: z.string().optional().describe("Path prefix for Elasticsearch"),
+
+    version: z
       .string()
       .optional()
-      .describe("Path prefix for Elasticsearch"),
+      .transform((val) => (["8", "9"].includes(val || "") ? val : "9"))
+      .describe("Elasticsearch version (8, or 9)"),
   })
   .refine(
     (data) => {
@@ -104,7 +110,8 @@ export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
   const validatedConfig = ConfigSchema.parse(config);
-  const { url, apiKey, username, password, caCert, pathPrefix } = validatedConfig;
+  const { url, apiKey, username, password, caCert, version, pathPrefix } =
+    validatedConfig;
 
   const clientOptions: ClientOptions = {
     node: url,
@@ -140,6 +147,16 @@ export async function createElasticsearchMcpServer(
     }
   }
 
+  // Add version-specific configuration
+  if (version === "8") {
+    clientOptions.maxRetries = 5;
+    clientOptions.requestTimeout = 30000;
+    clientOptions.headers = {
+      accept: "application/vnd.elasticsearch+json;compatible-with=8",
+      "content-type": "application/vnd.elasticsearch+json;compatible-with=8",
+    };
+  }
+
   const esClient = new Client(clientOptions);
 
   const server = new McpServer({
@@ -158,11 +175,11 @@ export async function createElasticsearchMcpServer(
         .min(1, "Index pattern is required")
         .describe("Index pattern of Elasticsearch indices to list"),
     },
-    async ( {indexPattern} ) => {
+    async ({ indexPattern }) => {
       try {
-        const response = await esClient.cat.indices({ 
-          index: indexPattern, 
-          format: "json" 
+        const response = await esClient.cat.indices({
+          index: indexPattern,
+          format: "json",
         });
 
         const indicesInfo = response.map((index) => ({
@@ -456,6 +473,7 @@ const config: ElasticsearchConfig = {
   username: process.env.ES_USERNAME || "",
   password: process.env.ES_PASSWORD || "",
   caCert: process.env.ES_CA_CERT || "",
+  version: process.env.ES_VERSION || "",
   pathPrefix: process.env.ES_PATH_PREFIX || "",
 };
 
