@@ -12,19 +12,21 @@ metadata:
 
 spec:
   type: buildkite-pipeline
-  owner: group:search-extract-and-transform
+  owner: group:devtools-team
   system: buildkite
   implementation:
     apiVersion: buildkite.elastic.dev/v1
     kind: Pipeline
     metadata:
       name: mcp-server-elasticsearch
-      description: 
+      description: Run checks for the mcp-server-elasticsearch package
     spec:
       repository: elastic/mcp-server-elasticsearch
       pipeline_file: ".buildkite/pipeline.yml"
       teams:
         search-extract-and-transform:
+          access_level: MANAGE_BUILD_AND_READ
+        devtools-team:
           access_level: MANAGE_BUILD_AND_READ
         everyone:
           access_level: READ_ONLY
