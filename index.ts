@@ -14,7 +14,7 @@ import fs from "fs";
 // Product metadata, used to generate the request User-Agent header and 
 // passed to the McpServer constructor.
 const product = {
-  name: "elasticsearch-mcp-server",
+  name: "elasticsearch-mcp",
   version: "0.1.1",
 };
 
