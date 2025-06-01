@@ -247,8 +247,20 @@ export async function createElasticsearchMcpServer(
         .describe(
           "Complete Elasticsearch query DSL object that can include query, size, from, sort, etc."
         ),
+
+      profile: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Whether to include query profiling information"),
+
+      explain: z
+        .boolean()
+        .optional()
+        .default(false)
+        .describe("Whether to include explanation of how the query was executed"),
     },
-    async ({ index, queryBody }) => {
+    async ({ index, queryBody, profile, explain }) => {
       try {
         // Get mappings to identify text fields for highlighting
         const mappingResponse = await esClient.indices.getMapping({
@@ -260,6 +272,8 @@ export async function createElasticsearchMcpServer(
         const searchRequest: estypes.SearchRequest = {
           index,
           ...queryBody,
+          profile: profile,
+          explain: explain,
         };
 
         // Always do highlighting
@@ -306,6 +320,10 @@ export async function createElasticsearchMcpServer(
             }
           }
 
+          if (explain && hit._explanation) {
+            content += `\nExplanation:\n${JSON.stringify(hit._explanation, null, 2)}`;
+          }
+
           return {
             type: "text" as const,
             text: content.trim(),
@@ -321,8 +339,18 @@ export async function createElasticsearchMcpServer(
           }, showing ${result.hits.hits.length} from position ${from}`,
         };
 
+        const fragments = [metadataFragment, ...contentFragments];
+
+        if (profile && result.profile) {
+          const profileFragment = {
+            type: "text" as const,
+            text: `\nQuery Profile:\n${JSON.stringify(result.profile, null, 2)}`,
+          };
+          fragments.push(profileFragment);
+        }
+
         return {
-          content: [metadataFragment, ...contentFragments],
+          content: fragments,
         };
       } catch (error) {
         console.error(
