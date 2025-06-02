@@ -7,7 +7,14 @@
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Client, estypes, ClientOptions } from "@elastic/elasticsearch";
+import { 
+  Client, 
+  estypes, 
+  ClientOptions, 
+  Transport,
+  TransportRequestOptions,
+  TransportRequestParams 
+} from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs";
 
@@ -17,6 +24,24 @@ const product = {
   name: "elasticsearch-mcp",
   version: "0.1.1",
 };
+
+// Prepend a path prefix to every request path
+class CustomTransport extends Transport {
+  private readonly pathPrefix: string;
+
+  constructor(opts: ConstructorParameters<typeof Transport>[0], pathPrefix: string) {
+    super(opts);
+    this.pathPrefix = pathPrefix;
+  }
+
+  async request(
+    params: TransportRequestParams,
+    options?: TransportRequestOptions
+  ): Promise<any> {
+    const newParams = { ...params, path: this.pathPrefix + params.path };
+    return super.request(newParams, options);
+  }
+}
 
 // Configuration schema with auth options
 const ConfigSchema = z
@@ -47,6 +72,11 @@ const ConfigSchema = z
       .string()
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
+    
+    pathPrefix: z
+      .string()
+      .optional()
+      .describe("Path prefix for Elasticsearch"),
   })
   .refine(
     (data) => {
@@ -81,7 +111,7 @@ export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
   const validatedConfig = ConfigSchema.parse(config);
-  const { url, apiKey, username, password, caCert } = validatedConfig;
+  const { url, apiKey, username, password, caCert, pathPrefix } = validatedConfig;
 
   const clientOptions: ClientOptions = {
     node: url,
@@ -89,6 +119,15 @@ export async function createElasticsearchMcpServer(
       "user-agent": `${product.name}/${product.version}`,
     },
   };
+
+  if (pathPrefix) {
+    const verifiedPathPrefix = pathPrefix;
+    clientOptions.Transport = class extends CustomTransport {
+      constructor(opts: ConstructorParameters<typeof Transport>[0]) {
+        super(opts, verifiedPathPrefix);
+      }
+    };
+  }
 
   // Set up authentication
   if (apiKey) {
@@ -424,6 +463,7 @@ const config: ElasticsearchConfig = {
   username: process.env.ES_USERNAME || "",
   password: process.env.ES_PASSWORD || "",
   caCert: process.env.ES_CA_CERT || "",
+  pathPrefix: process.env.ES_PATH_PREFIX || "",
 };
 
 async function main() {

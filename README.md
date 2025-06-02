@@ -77,6 +77,7 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 | `ES_USERNAME` | Elasticsearch username for basic authentication | No |
 | `ES_PASSWORD` | Elasticsearch password for basic authentication | No |
 | `ES_CA_CERT` | Path to custom CA certificate for Elasticsearch SSL/TLS | No |
+| `ES_PATH_PREFIX` | Path prefix for Elasticsearch instance exposed at a non-root path | No |
 
 
 ### Developing Locally
