@@ -38,7 +38,7 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.0.0",
-    "@modelcontextprotocol/sdk": "1.11.2"
+    "@modelcontextprotocol/sdk": "1.12.1"
   },
   "engines": {
     "node": ">=18"
