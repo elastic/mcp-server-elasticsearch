@@ -72,7 +72,12 @@ const ConfigSchema = z
       .string()
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
-    
+
+    sslSkipVerify: z
+      .boolean()
+      .optional()
+      .describe("Skip SSL certificate verification"),
+
     pathPrefix: z
       .string()
       .optional()
@@ -111,7 +116,7 @@ export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
   const validatedConfig = ConfigSchema.parse(config);
-  const { url, apiKey, username, password, caCert, pathPrefix } = validatedConfig;
+  const { url, apiKey, username, password, caCert, sslSkipVerify, pathPrefix } = validatedConfig;
 
   const clientOptions: ClientOptions = {
     node: url,
@@ -137,10 +142,11 @@ export async function createElasticsearchMcpServer(
   }
 
   // Set up SSL/TLS certificate if provided
+  clientOptions.tls = {};
   if (caCert) {
     try {
       const ca = fs.readFileSync(caCert);
-      clientOptions.tls = { ca };
+      clientOptions.tls.ca = ca;
     } catch (error) {
       console.error(
         `Failed to read certificate file: ${
@@ -148,6 +154,11 @@ export async function createElasticsearchMcpServer(
         }`
       );
     }
+  }
+
+  // Skip verification if requested
+  if (sslSkipVerify) {
+    clientOptions.tls.rejectUnauthorized = false;
   }
 
   const esClient = new Client(clientOptions);
@@ -463,6 +474,7 @@ const config: ElasticsearchConfig = {
   username: process.env.ES_USERNAME || "",
   password: process.env.ES_PASSWORD || "",
   caCert: process.env.ES_CA_CERT || "",
+  sslSkipVerify: process.env.ES_SSL_SKIP_VERIFY === "1" || process.env.ES_SSL_SKIP_VERIFY === "true",
   pathPrefix: process.env.ES_PATH_PREFIX || "",
 };
 
