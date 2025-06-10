@@ -17,12 +17,14 @@ import {
 } from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs";
+// @ts-expect-error ignore `with` keyword
+import pkg from './package.json' with { type: 'json' }
 
 // Product metadata, used to generate the request User-Agent header and 
 // passed to the McpServer constructor.
 const product = {
   name: "elasticsearch-mcp",
-  version: "0.1.1",
+  version: pkg.version,
 };
 
 // Prepend a path prefix to every request path
