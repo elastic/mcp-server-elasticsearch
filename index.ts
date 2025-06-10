@@ -15,7 +15,8 @@ import {
   TransportRequestOptions,
   TransportRequestParams 
 } from "@elastic/elasticsearch";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
+import express from "express";
 import fs from "fs";
 
 // Product metadata, used to generate the request User-Agent header and 
@@ -77,6 +78,12 @@ const ConfigSchema = z
       .string()
       .optional()
       .describe("Path prefix for Elasticsearch"),
+
+    port: z
+      .number()
+      .optional()
+      .default(3000)
+      .describe("Port for HTTP server"),
   })
   .refine(
     (data) => {
@@ -464,13 +471,48 @@ const config: ElasticsearchConfig = {
   password: process.env.ES_PASSWORD || "",
   caCert: process.env.ES_CA_CERT || "",
   pathPrefix: process.env.ES_PATH_PREFIX || "",
+  port: parseInt(process.env.PORT || "3000"),
 };
 
 async function main() {
-  const transport = new StdioServerTransport();
+  const app = express();
+  app.use(express.json());
+
   const server = await createElasticsearchMcpServer(config);
 
-  await server.connect(transport);
+  // Store transports for each session
+  const transports: { [sessionId: string]: SSEServerTransport } = {};
+
+  // SSE endpoint for clients to connect to
+  app.get('/sse', async (req, res) => {
+    const transport = new SSEServerTransport('/messages', res);
+    const sessionId = (transport as any).sessionId || Math.random().toString(36);
+    transports[sessionId] = transport;
+    
+    res.on("close", () => {
+      delete transports[sessionId];
+    });
+    
+    await server.connect(transport);
+  });
+
+  // Message endpoint for client-to-server communication
+  app.post('/messages', async (req, res) => {
+    const sessionId = req.query.sessionId as string;
+    const transport = transports[sessionId];
+    if (transport) {
+      await transport.handlePostMessage(req, res, req.body);
+    } else {
+      res.status(400).send('No transport found for sessionId');
+    }
+  });
+
+  const port = config.port;
+  app.listen(port, () => {
+    console.log(`MCP Elasticsearch Server with SSE transport listening on port ${port}`);
+    console.log(`SSE endpoint: http://localhost:${port}/sse`);
+    console.log(`Messages endpoint: http://localhost:${port}/messages`);
+  });
 
   process.on("SIGINT", async () => {
     await server.close();

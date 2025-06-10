@@ -38,12 +38,14 @@
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.0.0",
-    "@modelcontextprotocol/sdk": "1.12.1"
+    "@modelcontextprotocol/sdk": "1.12.1",
+    "express": "^4.21.2"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
+    "@types/express": "^4.17.23",
     "@types/node": "22.15.29",
     "license-checker": "25.0.1",
     "shx": "0.4.0",

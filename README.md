@@ -62,6 +62,39 @@ https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
    - The MCP server should connect automatically
    - You can now ask questions about your Elasticsearch data
 
+### Using SSE Transport
+
+> [!NOTE]
+> This server now supports SSE (Server-Sent Events) transport for HTTP-based communication, which enables deployment as a standalone web service.
+
+For SSE transport deployment:
+
+1. **Build and start the server**
+   ```bash
+   npm install
+   npm run build
+   ES_URL=your-elasticsearch-url ES_API_KEY=your-api-key PORT=3000 npm start
+   ```
+
+2. **Configure MCP Client for SSE**
+   
+   For clients that support SSE transport, use the following configuration:
+   
+   ```json
+   {
+     "mcpServers": {
+       "elasticsearch-sse-server": {
+         "transport": "sse",
+         "url": "http://localhost:3000/sse"
+       }
+     }
+   }
+   ```
+
+3. **Server Endpoints**
+   - SSE endpoint: `http://localhost:3000/sse`
+   - Messages endpoint: `http://localhost:3000/messages`
+
 ### Configuration Options
 
 The Elasticsearch MCP Server supports configuration options to connect to your Elasticsearch:
@@ -78,6 +111,7 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 | `ES_PASSWORD` | Elasticsearch password for basic authentication | No |
 | `ES_CA_CERT` | Path to custom CA certificate for Elasticsearch SSL/TLS | No |
 | `ES_PATH_PREFIX` | Path prefix for Elasticsearch instance exposed at a non-root path | No |
+| `PORT` | Port for HTTP server (SSE transport only) | No (default: 3000) |
 
 
 ### Developing Locally
@@ -156,6 +190,10 @@ We welcome contributions from the community! For details on how to contribute, p
 2. The MCP server carries out these operations (listing indices, fetching mappings, performing searches).
 3. The MCP Client processes the results and presents them in a user-friendly format.
 
+**SSE Transport**: 
+
+This server supports SSE transport mechanism: For HTTP-based deployment, enabling the server to run as a standalone web service
+
 ## Security Best Practices
 
 > [!WARNING]
@@ -200,6 +238,7 @@ This project is licensed under the Apache License 2.0.
 * Verify that your Elasticsearch URL is accessible from your machine.
 * Check that your authentication credentials (API key or username/password) have the necessary permissions.
 * If using SSL/TLS with a custom CA, verify that the certificate path is correct and the file is readable.
+* For SSE transport, ensure the server is running and accessible at the specified URL.
 * Look at the terminal output for error messages.
 
 If you encounter issues, feel free to open an issue on the GitHub repository.
