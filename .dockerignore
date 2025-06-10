@@ -1,0 +1,10 @@
+.buildkite
+.github
+.nvmrc
+dist
+docs
+renovate.json
+scripts
+node_modules
+catalog-info.yaml
+yarn.lock
