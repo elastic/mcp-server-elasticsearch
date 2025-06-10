@@ -1,7 +1,7 @@
 {
   "name": "@elastic/mcp-server-elasticsearch",
   "description": "Elasticsearch MCP Server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "author": "Elastic",
   "type": "module",
@@ -20,7 +20,11 @@
     "mcp-server"
   ],
   "files": [
-    "dist"
+    "package.json",
+    "dist",
+    "NOTICE.txt",
+    "LICENSE",
+    "README.md"
   ],
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
@@ -28,16 +32,23 @@
     "watch": "tsc --watch",
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "test": "npm run build"
+    "test": "npm run build",
+    "license-checker": "license-checker --production --onlyAllow='MIT;Apache-2.0;Apache1.1;ISC;BSD-3-Clause;BSD-2-Clause;0BSD'",
+    "license-header": "./scripts/check-spdx",
+    "generate-notice": "node ./scripts/generate-notice.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.17.1",
-    "@modelcontextprotocol/sdk": "1.8.0"
+    "@elastic/elasticsearch": "^9.0.0",
+    "@modelcontextprotocol/sdk": "1.12.1"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "devDependencies": {
-    "@types/node": "22.13.15",
+    "@types/node": "22.15.29",
+    "license-checker": "25.0.1",
     "shx": "0.4.0",
-    "typescript": "5.8.2"
+    "typescript": "5.8.3"
   },
   "publishConfig": {
     "access": "public"
