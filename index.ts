@@ -10,9 +10,46 @@ import "./telemetry.js";
 
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { Client, estypes, ClientOptions } from "@elastic/elasticsearch";
+import {
+  Client,
+  estypes,
+  ClientOptions,
+  Transport,
+  TransportRequestOptions,
+  TransportRequestParams,
+} from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs";
+// @ts-expect-error ignore `with` keyword
+import pkg from './package.json' with { type: 'json' }
+
+// Product metadata, used to generate the request User-Agent header and 
+// passed to the McpServer constructor.
+const product = {
+  name: "elasticsearch-mcp",
+  version: pkg.version,
+};
+
+// Prepend a path prefix to every request path
+class CustomTransport extends Transport {
+  private readonly pathPrefix: string;
+
+  constructor(
+    opts: ConstructorParameters<typeof Transport>[0],
+    pathPrefix: string
+  ) {
+    super(opts);
+    this.pathPrefix = pathPrefix;
+  }
+
+  async request(
+    params: TransportRequestParams,
+    options?: TransportRequestOptions
+  ): Promise<any> {
+    const newParams = { ...params, path: this.pathPrefix + params.path };
+    return super.request(newParams, options);
+  }
+}
 
 // Configuration schema with auth options
 const ConfigSchema = z
@@ -43,6 +80,14 @@ const ConfigSchema = z
       .string()
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
+
+    pathPrefix: z.string().optional().describe("Path prefix for Elasticsearch"),
+
+    version: z
+      .string()
+      .optional()
+      .transform((val) => (["8", "9"].includes(val || "") ? val : "9"))
+      .describe("Elasticsearch version (8, or 9)"),
   })
   .refine(
     (data) => {
@@ -77,11 +122,24 @@ export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
   const validatedConfig = ConfigSchema.parse(config);
-  const { url, apiKey, username, password, caCert } = validatedConfig;
+  const { url, apiKey, username, password, caCert, version, pathPrefix } =
+    validatedConfig;
 
   const clientOptions: ClientOptions = {
     node: url,
+    headers: {
+      "user-agent": `${product.name}/${product.version}`,
+    },
   };
+
+  if (pathPrefix) {
+    const verifiedPathPrefix = pathPrefix;
+    clientOptions.Transport = class extends CustomTransport {
+      constructor(opts: ConstructorParameters<typeof Transport>[0]) {
+        super(opts, verifiedPathPrefix);
+      }
+    };
+  }
 
   // Set up authentication
   if (apiKey) {
@@ -104,21 +162,37 @@ export async function createElasticsearchMcpServer(
     }
   }
 
+  // Add version-specific configuration
+  if (version === "8") {
+    clientOptions.maxRetries = 5;
+    clientOptions.requestTimeout = 30000;
+    clientOptions.headers = {
+      accept: "application/vnd.elasticsearch+json;compatible-with=8",
+      "content-type": "application/vnd.elasticsearch+json;compatible-with=8",
+    };
+  }
+
   const esClient = new Client(clientOptions);
 
-  const server = new McpServer({
-    name: "elasticsearch-mcp-server",
-    version: "0.1.1",
-  });
+  const server = new McpServer(product);
 
   // Tool 1: List indices
   server.tool(
     "list_indices",
     "List all available Elasticsearch indices",
-    {},
-    async () => {
+    {
+      indexPattern: z
+        .string()
+        .trim()
+        .min(1, "Index pattern is required")
+        .describe("Index pattern of Elasticsearch indices to list"),
+    },
+    async ({ indexPattern }) => {
       try {
-        const response = await esClient.cat.indices({ format: "json" });
+        const response = await esClient.cat.indices({
+          index: indexPattern,
+          format: "json",
+        });
 
         const indicesInfo = response.map((index) => ({
           index: index.index,
@@ -411,6 +485,8 @@ const config: ElasticsearchConfig = {
   username: process.env.ES_USERNAME || "",
   password: process.env.ES_PASSWORD || "",
   caCert: process.env.ES_CA_CERT || "",
+  version: process.env.ES_VERSION || "",
+  pathPrefix: process.env.ES_PATH_PREFIX || "",
 };
 
 async function main() {

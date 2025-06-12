@@ -1,4 +1,5 @@
 # Elasticsearch MCP Server
+[![smithery badge](https://smithery.ai/badge/@elastic/mcp-server-elasticsearch)](https://smithery.ai/server/@elastic/mcp-server-elasticsearch)
 
 This repository contains experimental features intended for research and evaluation and are not production-ready.
 
@@ -28,6 +29,14 @@ This server connects agents to your Elasticsearch data using the Model Context P
 https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
 
 ## Installation & Setup
+
+### Installing via Smithery
+
+To install Elasticsearch MCP Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@elastic/mcp-server-elasticsearch):
+
+```bash
+npx -y @smithery/cli install @elastic/mcp-server-elasticsearch --client claude
+```
 
 ### Using the Published NPM Package
 
@@ -69,7 +78,6 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 > [!NOTE]
 > You must provide either an API key or both username and password for authentication.
 
-
 | Environment Variable | Description | Required |
 |---------------------|-------------|----------|
 | `ES_URL` | Your Elasticsearch instance URL | Yes |
@@ -77,7 +85,7 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 | `ES_USERNAME` | Elasticsearch username for basic authentication | No |
 | `ES_PASSWORD` | Elasticsearch password for basic authentication | No |
 | `ES_CA_CERT` | Path to custom CA certificate for Elasticsearch SSL/TLS | No |
-
+| `ES_PATH_PREFIX` | Path prefix for Elasticsearch instance exposed at a non-root path | No |
 
 ### Developing Locally
 
@@ -85,16 +93,19 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 > If you want to modify or extend the MCP Server, follow these local development steps.
 
 1. **Use the correct Node.js version**
+
    ```bash
    nvm use
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Build the Project**
+
    ```bash
    npm run build
    ```
@@ -122,6 +133,7 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
    ```
 
 5. **Debugging with MCP Inspector**
+
    ```bash
    ES_URL=your-elasticsearch-url ES_API_KEY=your-api-key npm run inspector
    ```
@@ -134,6 +146,23 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 
    🔍 MCP Inspector is up and running at http://localhost:5173 🚀
    ```
+
+#### Docker image
+
+A `Dockerfile` is available if you would like to build and run the server in a container. To build, run:
+
+```sh
+docker build -t mcp-server-elasticsearch .
+```
+
+And to run, rather than using the `npx` command above or a custom `node` or `npm` command, run:
+
+```sh
+docker run -i \
+  -e ES_URL=<url> \
+  -e ES_API_KEY=<key> \
+  mcp-server-elasticsearch
+```
 
 ## Contributing
 

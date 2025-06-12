@@ -1,0 +1,41 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - esUrl
+    properties:
+      esUrl:
+        type: string
+        description: Elasticsearch instance URL
+      esApiKey:
+        type: string
+        description: Elasticsearch API key for authentication (optional if using
+          username/password)
+      esUsername:
+        type: string
+        description: Elasticsearch username for basic authentication (optional)
+      esPassword:
+        type: string
+        description: Elasticsearch password for basic authentication (optional)
+      esCaCert:
+        type: string
+        description: Path to a custom CA certificate if needed (optional)
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => ({
+      command: 'node',
+      args: ['dist/index.js'],
+      env: Object.assign({
+        ES_URL: config.esUrl
+      }, config.esApiKey ? { ES_API_KEY: config.esApiKey } : {},
+      config.esUsername && config.esPassword ? { ES_USERNAME: config.esUsername, ES_PASSWORD: config.esPassword } : {},
+      config.esCaCert ? { ES_CA_CERT: config.esCaCert } : {})
+    })
+  exampleConfig:
+    esUrl: http://localhost:9200
+    esApiKey: your-elasticsearch-api-key
