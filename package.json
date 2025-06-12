@@ -1,7 +1,7 @@
 {
   "name": "@elastic/mcp-server-elasticsearch",
   "description": "Elasticsearch MCP Server",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "license": "Apache-2.0",
   "author": "Elastic",
   "type": "module",
@@ -20,6 +20,7 @@
     "mcp-server"
   ],
   "files": [
+    "package.json",
     "dist",
     "NOTICE.txt",
     "LICENSE",
@@ -37,15 +38,15 @@
     "generate-notice": "node ./scripts/generate-notice.js"
   },
   "dependencies": {
-    "@elastic/elasticsearch": "^8.17.1",
-    "@modelcontextprotocol/sdk": "1.9.0"
+    "@elastic/elasticsearch": "^9.0.0",
+    "@modelcontextprotocol/sdk": "1.12.1"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
-    "@types/node": "22.14.1",
-    "license-checker": "^25.0.1",
+    "@types/node": "22.15.29",
+    "license-checker": "25.0.1",
     "shx": "0.4.0",
     "typescript": "5.8.3"
   },
