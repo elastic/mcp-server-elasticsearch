@@ -27,7 +27,7 @@
     "README.md"
   ],
   "scripts": {
-    "build": "tsc && shx chmod +x dist/*.js",
+    "build": "tsc && shx chmod +x dist/index.js",
     "prepare": "npm run build",
     "watch": "tsc --watch",
     "start": "node dist/index.js",
@@ -38,7 +38,9 @@
     "generate-notice": "node ./scripts/generate-notice.js"
   },
   "dependencies": {
+    "@arizeai/openinference-instrumentation-mcp": "^0.2.0",
     "@elastic/elasticsearch": "^9.0.0",
+    "@elastic/opentelemetry-node": "^1.0.0",
     "@modelcontextprotocol/sdk": "1.12.1"
   },
   "engines": {
