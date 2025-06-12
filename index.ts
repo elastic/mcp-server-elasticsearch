@@ -5,24 +5,39 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import "@elastic/opentelemetry-node";
+import "./telemetry.js";
+
 import { z } from "zod";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { 
-  Client, 
-  estypes, 
-  ClientOptions, 
+import {
+  Client,
+  estypes,
+  ClientOptions,
   Transport,
   TransportRequestOptions,
-  TransportRequestParams 
+  TransportRequestParams,
 } from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import fs from "fs";
+// @ts-expect-error ignore `with` keyword
+import pkg from './package.json' with { type: 'json' }
+
+// Product metadata, used to generate the request User-Agent header and
+// passed to the McpServer constructor.
+const product = {
+  name: "elasticsearch-mcp",
+  version: pkg.version,
+};
 
 // Prepend a path prefix to every request path
 class CustomTransport extends Transport {
   private readonly pathPrefix: string;
 
-  constructor(opts: ConstructorParameters<typeof Transport>[0], pathPrefix: string) {
+  constructor(
+    opts: ConstructorParameters<typeof Transport>[0],
+    pathPrefix: string
+  ) {
     super(opts);
     this.pathPrefix = pathPrefix;
   }
@@ -66,15 +81,19 @@ const ConfigSchema = z
       .optional()
       .describe("Path to custom CA certificate for Elasticsearch"),
 
+    pathPrefix: z.string().optional().describe("Path prefix for Elasticsearch"),
+
+    version: z
+      .string()
+      .optional()
+      .transform((val) => (["8", "9"].includes(val || "") ? val : "9"))
+      .describe("Elasticsearch version (8, or 9)"),
+
     sslSkipVerify: z
       .boolean()
       .optional()
       .describe("Skip SSL certificate verification"),
 
-    pathPrefix: z
-      .string()
-      .optional()
-      .describe("Path prefix for Elasticsearch"),
   })
   .refine(
     (data) => {
@@ -109,10 +128,13 @@ export async function createElasticsearchMcpServer(
   config: ElasticsearchConfig
 ) {
   const validatedConfig = ConfigSchema.parse(config);
-  const { url, apiKey, username, password, caCert, sslSkipVerify, pathPrefix } = validatedConfig;
+  const { url, apiKey, username, password, caCert, version, pathPrefix, sslSkipVerify } = validatedConfig;
 
   const clientOptions: ClientOptions = {
     node: url,
+    headers: {
+      "user-agent": `${product.name}/${product.version}`,
+    },
   };
 
   if (pathPrefix) {
@@ -146,6 +168,16 @@ export async function createElasticsearchMcpServer(
     }
   }
 
+  // Add version-specific configuration
+  if (version === "8") {
+    clientOptions.maxRetries = 5;
+    clientOptions.requestTimeout = 30000;
+    clientOptions.headers = {
+      accept: "application/vnd.elasticsearch+json;compatible-with=8",
+      "content-type": "application/vnd.elasticsearch+json;compatible-with=8",
+    };
+  }
+
   // Skip verification if requested
   if (sslSkipVerify) {
     clientOptions.tls.rejectUnauthorized = false;
@@ -153,10 +185,7 @@ export async function createElasticsearchMcpServer(
 
   const esClient = new Client(clientOptions);
 
-  const server = new McpServer({
-    name: "elasticsearch-mcp-server",
-    version: "0.1.1",
-  });
+  const server = new McpServer(product);
 
   // Tool 1: List indices
   server.tool(
@@ -169,11 +198,11 @@ export async function createElasticsearchMcpServer(
         .min(1, "Index pattern is required")
         .describe("Index pattern of Elasticsearch indices to list"),
     },
-    async ( {indexPattern} ) => {
+    async ({ indexPattern }) => {
       try {
-        const response = await esClient.cat.indices({ 
-          index: indexPattern, 
-          format: "json" 
+        const response = await esClient.cat.indices({
+          index: indexPattern,
+          format: "json",
         });
 
         const indicesInfo = response.map((index) => ({
@@ -467,6 +496,7 @@ const config: ElasticsearchConfig = {
   username: process.env.ES_USERNAME || "",
   password: process.env.ES_PASSWORD || "",
   caCert: process.env.ES_CA_CERT || "",
+  version: process.env.ES_VERSION || "",
   sslSkipVerify: process.env.ES_SSL_SKIP_VERIFY === "1" || process.env.ES_SSL_SKIP_VERIFY === "true",
   pathPrefix: process.env.ES_PATH_PREFIX || "",
 };
