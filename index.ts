@@ -146,7 +146,7 @@ export async function createElasticsearchMcpServer (config: ElasticsearchConfig)
 
   // Set up SSL/TLS certificate if provided
   clientOptions.tls = {}
-  if (caCert != null) {
+  if (caCert != null && caCert.length > 0) {
     try {
       const ca = fs.readFileSync(caCert)
       clientOptions.tls.ca = ca
