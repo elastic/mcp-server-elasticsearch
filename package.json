@@ -32,15 +32,17 @@
     "watch": "tsc --watch",
     "start": "node dist/index.js",
     "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "test": "npm run build",
+    "test": "npm run lint && npm run build",
     "license-checker": "license-checker --production --onlyAllow='MIT;Apache-2.0;Apache1.1;ISC;BSD-3-Clause;BSD-2-Clause;0BSD'",
     "license-header": "./scripts/check-spdx",
-    "generate-notice": "node ./scripts/generate-notice.js"
+    "generate-notice": "node ./scripts/generate-notice.js",
+    "lint": "ts-standard *.ts",
+    "lint:fix": "ts-standard --fix *.ts"
   },
   "dependencies": {
     "@arizeai/openinference-instrumentation-mcp": "^0.2.0",
     "@elastic/elasticsearch": "^9.0.0",
-    "@elastic/opentelemetry-node": "^1.0.0",
+    "@elastic/opentelemetry-node": "1.0.0",
     "@modelcontextprotocol/sdk": "1.12.1"
   },
   "engines": {
@@ -50,6 +52,7 @@
     "@types/node": "22.15.29",
     "license-checker": "25.0.1",
     "shx": "0.4.0",
+    "ts-standard": "^12.0.2",
     "typescript": "5.8.3"
   },
   "publishConfig": {
