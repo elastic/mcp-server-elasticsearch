@@ -19,9 +19,14 @@ import {
   TransportRequestParams,
 } from "@elastic/elasticsearch";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {StreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import fs from "fs";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import { Request, Response } from "express";
 // @ts-expect-error ignore `with` keyword
 import pkg from './package.json' with { type: 'json' }
+
 
 // Product metadata, used to generate the request User-Agent header and 
 // passed to the McpServer constructor.
@@ -498,17 +503,70 @@ const config: ElasticsearchConfig = {
   pathPrefix: process.env.ES_PATH_PREFIX || "",
 };
 
+//transport mode selection using yargs
+const argv = yargs(hideBin(process.argv))
+  .option("mcp-transport", {
+    type: "string",
+    choices: ["stdio", "http"],
+    default: "stdio",
+    description: "Choose transport mode: stdio or http"
+  }).strict().parseSync();
+
+  const transportMode = argv["mcp-transport"] 
+
+
 async function main() {
-  const transport = new StdioServerTransport();
   const server = await createElasticsearchMcpServer(config);
 
-  await server.connect(transport);
+  if (transportMode === "http") {
+    const express = (await import("express")).default;
 
-  process.on("SIGINT", async () => {
-    await server.close();
-    process.exit(0);
-  });
+    const app = express();
+    app.use(express.json());
+
+    app.post("/mcp", async (req: Request, res: Response) => {
+      try {
+        const transport: StreamableHTTPServerTransport =
+          new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+          });
+        res.on("close", () => {
+          console.log("Request closed");
+          transport.close();
+          server.close();
+        });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        console.error("Error handling MCP request:", error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32603,
+              message: "Internal server error",
+            },
+            id: null,
+          });
+        }
+      }
+    });
+    const PORT = 3002;
+    app.listen(PORT, () => {
+      console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
+    });
+  } else {
+    const transport = new StdioServerTransport();
+
+    await server.connect(transport);
+
+    process.on("SIGINT", async () => {
+      await server.close();
+      process.exit(0);
+    });
+  }
 }
+
 
 main().catch((error) => {
   console.error(

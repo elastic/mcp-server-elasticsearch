@@ -41,13 +41,17 @@
     "@arizeai/openinference-instrumentation-mcp": "^0.2.0",
     "@elastic/elasticsearch": "^9.0.0",
     "@elastic/opentelemetry-node": "1.0.0",
-    "@modelcontextprotocol/sdk": "1.12.1"
+    "@modelcontextprotocol/sdk": "1.12.1",
+    "express": "^5.1.0",
+    "yargs": "^18.0.0"
   },
   "engines": {
     "node": ">=18"
   },
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "22.15.29",
+    "@types/yargs": "^17.0.33",
     "license-checker": "25.0.1",
     "shx": "0.4.0",
     "typescript": "5.8.3"
