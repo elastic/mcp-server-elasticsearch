@@ -1,4 +1,5 @@
 # Elasticsearch MCP Server
+
 [![smithery badge](https://smithery.ai/badge/@elastic/mcp-server-elasticsearch)](https://smithery.ai/server/@elastic/mcp-server-elasticsearch)
 
 This repository contains experimental features intended for research and evaluation and are not production-ready.
@@ -26,7 +27,7 @@ This server connects agents to your Elasticsearch data using the Model Context P
 
 ## Demo
 
-https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c
+<https://github.com/user-attachments/assets/5dd292e1-a728-4ca7-8f01-1380d1bebe0c>
 
 ## Installation & Setup
 
@@ -44,9 +45,9 @@ npx -y @smithery/cli install @elastic/mcp-server-elasticsearch --client claude
 > The easiest way to use Elasticsearch MCP Server is through the published npm package.
 
 1. **Configure MCP Client**
-   - Open your MCP Client. See the [list of MCP Clients](https://modelcontextprotocol.io/clients), here we are configuring Claude Desktop.
-   - Go to **Settings > Developer > MCP Servers**
-   - Click `Edit Config` and add a new MCP Server with the following configuration:
+   * Open your MCP Client. See the [list of MCP Clients](https://modelcontextprotocol.io/clients), here we are configuring Claude Desktop.
+   * Go to **Settings > Developer > MCP Servers**
+   * Click `Edit Config` and add a new MCP Server with the following configuration:
 
    ```json
    {
@@ -67,9 +68,9 @@ npx -y @smithery/cli install @elastic/mcp-server-elasticsearch --client claude
    ```
 
 2. **Start a Conversation**
-   - Open a new conversation in your MCP Client
-   - The MCP server should connect automatically
-   - You can now ask questions about your Elasticsearch data
+   * Open a new conversation in your MCP Client
+   * The MCP server should connect automatically
+   * You can now ask questions about your Elasticsearch data
 
 ### Configuration Options
 
@@ -85,7 +86,9 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
 | `ES_USERNAME` | Elasticsearch username for basic authentication | No |
 | `ES_PASSWORD` | Elasticsearch password for basic authentication | No |
 | `ES_CA_CERT` | Path to custom CA certificate for Elasticsearch SSL/TLS | No |
+| `ES_SSL_SKIP_VERIFY` | Set to '1' or 'true' to skip SSL certificate verification | No |
 | `ES_PATH_PREFIX` | Path prefix for Elasticsearch instance exposed at a non-root path | No |
+| `ES_VERSION` | Server assumes Elasticsearch 9.x. Set to `8` target Elasticsearch 8.x | No |
 
 ### Developing Locally
 
@@ -111,9 +114,9 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
    ```
 
 4. **Run locally in Claude Desktop App**
-   - Open **Claude Desktop App**
-   - Go to **Settings > Developer > MCP Servers**
-   - Click `Edit Config` and add a new MCP Server with the following configuration:
+   * Open **Claude Desktop App**
+   * Go to **Settings > Developer > MCP Servers**
+   * Click `Edit Config` and add a new MCP Server with the following configuration:
 
    ```json
    {
