@@ -8,13 +8,10 @@ WORKDIR /app
 
 # Install dependencies (Docker build cache friendly)
 COPY package.json package-lock.json tsconfig.json ./
-RUN touch index.ts
-RUN npm install
+RUN touch index.ts && npm install
 
-COPY *.ts ./
+COPY *.ts run-docker.sh ./
 RUN npm run build
-
-COPY run-docker.sh .
 
 # Future-proof the CLI and require the "stdio" argument
 ENV RUNNING_IN_CONTAINER="true"
