@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 /*
  * Copyright Elasticsearch B.V. and contributors
  * SPDX-License-Identifier: Apache-2.0
@@ -502,6 +500,16 @@ const config: ElasticsearchConfig = {
 }
 
 async function main (): Promise<void> {
+  // If we're running in a container (see Dockerfile), future-proof the command-line
+  // by requiring the stdio protocol (http will come later)
+  if (process.env.RUNNING_IN_CONTAINER === "true") {
+    if (process.argv.length != 3 || process.argv[2] !== "stdio" ) {
+      console.log("Missing protocol argument.");
+      console.log("Usage: npm start stdio");
+      process.exit(1);
+    }
+  }
+
   const transport = new StdioServerTransport()
   const server = await createElasticsearchMcpServer(config)
 
