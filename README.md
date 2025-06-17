@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/elastic-mcp-server-elasticsearch-badge.png)](https://mseep.ai/app/elastic-mcp-server-elasticsearch)
+
 # Elasticsearch MCP Server
 
 [![smithery badge](https://smithery.ai/badge/@elastic/mcp-server-elasticsearch)](https://smithery.ai/server/@elastic/mcp-server-elasticsearch)
