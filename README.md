@@ -44,10 +44,14 @@ This server connects agents to your Elasticsearch data using the Model Context P
          "command": "docker",
          "args": [
            "run", "--rm", "-i",
-           "-e", "ES_URL=<your-elasticsearch-url>",
-           "-e", "ES_API_KEY=<your-api-key>",
+           "-e", "ES_URL",
+           "-e", "ES_API_KEY",
            "docker.elastic.co/mcp/elasticsearch", "stdio"
-         ]
+         ],
+         "env": {
+           "ES_URL": "<your-elasticsearch-url>",
+           "ES_API_KEY": "<your-api-key>"
+         }
        }
      }
    }
