@@ -28,6 +28,14 @@ Please note that this project follows the [Elastic's Open Source Community Code 
    npm run build
    ```
 
+To build the Docker image, run:
+
+```sh
+npm run build-docker-image
+```
+
+This builds a multi-architecture image for amd64 and arm64. If you don't have a configuration that allows multi-architecture builds, simply run `docker build -t mcp/elasticsearch` .
+
 ## Start Elasticsearch
 
 You can use either:

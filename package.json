@@ -37,7 +37,8 @@
     "license-header": "./scripts/check-spdx",
     "generate-notice": "node ./scripts/generate-notice.js",
     "lint": "ts-standard *.ts",
-    "lint:fix": "ts-standard --fix *.ts"
+    "lint:fix": "ts-standard --fix *.ts",
+    "build-docker-image": "docker buildx build -t mcp/elasticsearch --platform linux/amd64,linux/arm64 ."
   },
   "dependencies": {
     "@arizeai/openinference-instrumentation-mcp": "^0.2.0",
