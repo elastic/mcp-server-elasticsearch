@@ -16,6 +16,9 @@ import {
   TransportRequestOptions,
   TransportRequestParams
 } from '@elastic/elasticsearch'
+
+import axios from 'axios'; // Needed for the New google search tool
+
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import fs from 'fs'
 // @ts-expect-error ignore `with` keyword
@@ -485,7 +488,9 @@ export async function createElasticsearchMcpServer (config: ElasticsearchConfig)
     }
   )
 
-  return server
+  // --- NEW TOOL: Search Google Books ---
+
+  return server;
 }
 
 const config: ElasticsearchConfig = {
