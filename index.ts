@@ -513,9 +513,21 @@ const argv = yargs(hideBin(process.argv))
     choices: ["stdio", "http"],
     default: "stdio",
     description: "Choose transport mode: stdio or http"
+  }).option("port",{
+    type: "number",
+    default: 3002,
+    description: "Port for the HTTP server if using http transport mode",
+    coerce: (port)=>{
+      if (isNaN(port) || port < 1024 || port > 65535) {
+        throw new Error("Port must be a number between 1024 and 65535");
+      }
+      return port;
+    }
+    
   }).strict().parseSync();
 
   const transportMode = argv["mcp-transport"] 
+  const PORT = argv["port"] || 3002;
 
 
 async function main() {
@@ -554,7 +566,6 @@ async function main() {
         }
       }
     });
-    const PORT = 3002;
     app.listen(PORT, () => {
       console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
     });
