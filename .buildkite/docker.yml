@@ -1,0 +1,7 @@
+---
+# $yaml-language-server: $schema=https://raw.githubusercontent.com/buildkite/pipeline-schema/main/schema.json
+steps:
+  - label: "Build and publish Docker image"
+    command: "./.buildkite/docker-push.sh"
+    agents:
+      provider: "gcp"

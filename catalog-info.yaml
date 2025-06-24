@@ -1,4 +1,14 @@
-# Declare your Buildkite pipelines below
+---
+# yaml-language-server: $schema=https://json.schemastore.org/catalog-info.json
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: mcp-server-elasticsearch
+spec:
+  type: library
+  owner: group:devtools-team
+  lifecycle: beta
+
 ---
 # yaml-language-server: $schema=https://gist.githubusercontent.com/elasticmachine/988b80dae436cafea07d9a4a460a011d/raw/rre.schema.json
 apiVersion: backstage.io/v1alpha1
@@ -30,3 +40,36 @@ spec:
           access_level: MANAGE_BUILD_AND_READ
         everyone:
           access_level: READ_ONLY
+
+---
+# yaml-language-server: $schema=https://gist.githubusercontent.com/elasticmachine/988b80dae436cafea07d9a4a460a011d/raw/rre.schema.json
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: mcp-server-elasticsearch-docker
+  description: Build and publish Docker images for mcp-server-elasticsearch
+spec:
+  type: buildkite-pipeline
+  owner: group:devtools-team
+  system: buildkite
+  implementation:
+    apiVersion: buildkite.elastic.dev/v1
+    kind: Pipeline
+    metadata:
+      name: mcp-server-elasticsearch-docker
+      description: Build and publish Docker images for mcp-server-elasticsearch
+    spec:
+      repository: elastic/mcp-server-elasticsearch
+      pipeline_file: ".buildkite/docker.yml"
+      teams:
+        search-extract-and-transform:
+          access_level: MANAGE_BUILD_AND_READ
+        devtools-team:
+          access_level: MANAGE_BUILD_AND_READ
+        everyone:
+          access_level: READ_ONLY
+      provider_settings:
+        build_pull_requests: false
+        build_branches: false
+        build_tags: true
+      cancel_intermediate_builds: true
