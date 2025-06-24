@@ -43,7 +43,7 @@
   "dependencies": {
     "@arizeai/openinference-instrumentation-mcp": "^0.2.0",
     "@elastic/elasticsearch": "^9.0.0",
-    "@elastic/opentelemetry-node": "1.0.0",
+    "@elastic/opentelemetry-node": "^1.1.1",
     "@modelcontextprotocol/sdk": "1.12.1"
   },
   "engines": {
