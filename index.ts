@@ -14,12 +14,17 @@ import {
   ClientOptions,
   Transport,
   TransportRequestOptions,
-  TransportRequestParams
-} from '@elastic/elasticsearch'
-import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
-import fs from 'fs'
+  TransportRequestParams,
+} from "@elastic/elasticsearch";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import {StreamableHTTPServerTransport} from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import fs from "fs";
+import yargs from "yargs";
+import { hideBin } from "yargs/helpers";
+import { Request, Response } from "express";
 // @ts-expect-error ignore `with` keyword
 import pkg from './package.json' with { type: 'json' }
+
 
 // Product metadata, used to generate the request User-Agent header and
 // passed to the McpServer constructor.
@@ -499,25 +504,78 @@ const config: ElasticsearchConfig = {
   pathPrefix: process.env.ES_PATH_PREFIX ?? ''
 }
 
-async function main (): Promise<void> {
-  // If we're running in a container (see Dockerfile), future-proof the command-line
-  // by requiring the stdio protocol (http will come later)
-  if (process.env.RUNNING_IN_CONTAINER === "true") {
-    if (process.argv.length != 3 || process.argv[2] !== "stdio" ) {
-      console.log("Missing protocol argument.");
-      console.log("Usage: npm start stdio");
-      process.exit(1);
+//transport mode selection using yargs
+const argv = yargs(hideBin(process.argv))
+  .option("mcp-transport", {
+    type: "string",
+    choices: ["stdio", "http"],
+    default: "stdio",
+    description: "Choose transport mode: stdio or http"
+  }).option("port",{
+    type: "number",
+    default: 3002,
+    description: "Port for the HTTP server if using http transport mode",
+    coerce: (port)=>{
+      if (isNaN(port) || port < 1024 || port > 65535) {
+        throw new Error("Port must be a number between 1024 and 65535");
+      }
+      return port;
     }
-  }
+    
+  }).strict().parseSync();
 
-  const transport = new StdioServerTransport()
-  const server = await createElasticsearchMcpServer(config)
+  const transportMode = argv["mcp-transport"] 
+  const PORT = argv["port"] || 3002;
 
-  await server.connect(transport)
+
+async function main() {
+  const server = await createElasticsearchMcpServer(config);
+
+  if (transportMode === "http") {
+    const express = (await import("express")).default;
+
+    const app = express();
+    app.use(express.json());
+
+    app.post("/mcp", async (req: Request, res: Response) => {
+      try {
+        const transport: StreamableHTTPServerTransport =
+          new StreamableHTTPServerTransport({
+            sessionIdGenerator: undefined,
+          });
+        res.on("close", () => {
+          console.log("Request closed");
+          transport.close();
+          server.close();
+        });
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      } catch (error) {
+        console.error("Error handling MCP request:", error);
+        if (!res.headersSent) {
+          res.status(500).json({
+            jsonrpc: "2.0",
+            error: {
+              code: -32603,
+              message: "Internal server error",
+            },
+            id: null,
+          });
+        }
+      }
+    });
+    app.listen(PORT, () => {
+      console.log(`MCP Stateless Streamable HTTP Server listening on port ${PORT}`);
+    });
+  } else {
+    const transport = new StdioServerTransport();
+
+    await server.connect(transport);
 
   process.on('SIGINT', () => {
     server.close().finally(() => process.exit(0))
   })
+}
 }
 
 main().catch((error) => {
