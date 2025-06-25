@@ -150,7 +150,8 @@ The Elasticsearch MCP Server supports configuration options to connect to your E
          ],
          "env": {
            "ES_URL": "your-elasticsearch-url",
-           "ES_API_KEY": "your-api-key"
+           "ES_API_KEY": "your-api-key",
+           "OTEL_LOG_LEVEL": "none"
          }
        }
      }

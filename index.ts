@@ -518,13 +518,13 @@ export async function createElasticsearchMcpServer (config: ElasticsearchConfig)
 
 const config: ElasticsearchConfig = {
   url: process.env.ES_URL ?? '',
-  apiKey: process.env.ES_API_KEY ?? '',
-  username: process.env.ES_USERNAME ?? '',
-  password: process.env.ES_PASSWORD ?? '',
-  caCert: process.env.ES_CA_CERT ?? '',
-  version: process.env.ES_VERSION ?? '',
+  apiKey: process.env.ES_API_KEY,
+  username: process.env.ES_USERNAME,
+  password: process.env.ES_PASSWORD,
+  caCert: process.env.ES_CA_CERT,
+  version: process.env.ES_VERSION,
   sslSkipVerify: process.env.ES_SSL_SKIP_VERIFY === '1' || process.env.ES_SSL_SKIP_VERIFY === 'true',
-  pathPrefix: process.env.ES_PATH_PREFIX ?? ''
+  pathPrefix: process.env.ES_PATH_PREFIX
 }
 
 async function main (): Promise<void> {
