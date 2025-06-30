@@ -8,7 +8,7 @@ elastic_image="docker.elastic.co/mcp/elasticsearch:$version_tag"
 # build image
 docker buildx create --use --name builder
 docker buildx inspect --bootstrap
-docker buildx build -t "$elastic_image" --platform linux/amd64,linux/arm64 --builder builder .
+docker buildx build -t "$elastic_image" --platform linux/amd64,linux/arm64 --builder builder --load .
 
 # push to docker.elastic.co
 ELASTIC_PASSWORD=$(vault read -field=password secret/ci/elastic-mcp-server-elasticsearch/devtoolsmachine)
