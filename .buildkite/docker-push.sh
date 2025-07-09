@@ -5,10 +5,18 @@ set -euo pipefail
 version_tag=$(awk -F ' = ' '$1 ~ /version/ { gsub(/[\"]/, "", $2); printf("%s",$2) }' Cargo.toml)
 elastic_image="docker.elastic.co/mcp/elasticsearch"
 
+# set up multi-arch image builder
+docker buildx create \
+  --name multi-arch \
+  --driver docker-container \
+  --driver-opt default-load=true \
+  --platform linux/amd64,linux/arm64 \
+  --bootstrap
+
 # build image
-docker buildx create --use --name builder
-docker buildx inspect --bootstrap
-docker buildx build -t "$elastic_image:$version_tag" --platform linux/amd64,linux/arm64 --builder builder --load .
+docker buildx build -t "$elastic_image:$version_tag" --builder multi-arch .
+
+# tag image
 docker tag "$elastic_image:$version_tag" "$elastic_image:latest"
 
 # push to docker.elastic.co
