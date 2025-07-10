@@ -67,5 +67,5 @@ jobs:
         with:
           tag: ${{ inputs.version }}
           file: checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server${{ matrix.os.ext }}
-          asset_name: elasticsearch-core-mcp-server.${{ inputs.version }}.${{ matrix.os.name }})-${{ matrix.arch }}${{ matrix.os.ext }}
+          asset_name: elasticsearch-core-mcp-server-${{ inputs.version }}-${{ matrix.os.name }}-${{ matrix.arch }}${{ matrix.os.ext }}
           overwrite: true
