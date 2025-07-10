@@ -42,7 +42,7 @@ jobs:
           RUST_OS: ${{ matrix.os.name }}
           RUST_ARCH: ${{ matrix.arch }}
         run: |
-          echo target=$(checkout-main/.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
+          echo target=$($GITHUB_WORKSPACE/checkout-main/.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
       - name: Rust toolkit setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -52,13 +52,13 @@ jobs:
           RUST_OS: ${{ matrix.os.name }}
           RUST_ARCH: ${{ matrix.arch }}
         run: |
-          cd checkout-tag
-          ../checkout-main/.github/workflows/scripts/rust-build.sh
+          cd $GITHUB_WORKSPACE/checkout-tag
+          $GITHUB_WORKSPACE/checkout-main/.github/workflows/scripts/rust-build.sh
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           tag: ${{ inputs.version }}
           release_id: ${{ inputs.version }}
-          file: checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
+          file: ${{ github.workspace }}/checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
           asset_name: elasticsearch-core-mcp-server.${{ inputs.version }}.${{ matrix.os.name }})-${{ matrix.arch }}
           overwrite: true
