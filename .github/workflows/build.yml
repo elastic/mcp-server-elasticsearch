@@ -51,6 +51,12 @@ jobs:
         with:
           ref: ${{ inputs.version }}
           path: checkout-tag
+      - name: Add target config for arm64 on Linux
+        if: ${{ matrix.target.name == 'linux-arm64' }}
+        run: |
+          sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu
+          mkdir -p checkout-tag/.cargo
+          echo '\n\n[target.aarch64-unknown-linux-gnu]\nlinker = "aarch64-linux-gnu-gcc"' >> checkout-tag/.cargo/config
       - name: Build binary
         uses: houseabsolute/actions-rust-cross@v1.0.4
         with:
