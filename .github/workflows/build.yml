@@ -63,6 +63,6 @@ jobs:
         uses: svenstaro/upload-release-action@v2
         with:
           tag: ${{ inputs.version }}
-          file: ${{ github.workspace }}/checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
+          file: checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
           asset_name: elasticsearch-core-mcp-server.${{ inputs.version }}.${{ matrix.os.name }})-${{ matrix.arch }}
           overwrite: true
