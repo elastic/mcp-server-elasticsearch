@@ -30,6 +30,9 @@ jobs:
             runner: macos-latest
             ext: ""
     steps:
+      - name: Install missing OS dependencies for Linux
+        if: ${{ matrix.os.name == 'linux' && matrix.arch == 'arm64' }}
+        run: sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
