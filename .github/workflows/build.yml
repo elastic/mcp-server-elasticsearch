@@ -1,0 +1,57 @@
+name: Build Rust binaries
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version to build (e.g. v0.4.1)
+        required: true
+        type: string
+
+jobs:
+  build-binary:
+    runs-on: ${{ matrix.os.runner }}
+    permissions:
+      contents: write
+      id-token: write
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x64
+          - arm64
+        os:
+          - name: linux
+            runner: ubuntu-latest
+          - name: windows
+            runner: windows-latest
+          - name: macos
+            runner: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          ref: ${{ inputs.version }}
+      - name: Get Rust target name
+        id: rust-target
+        env:
+          RUST_OS: ${{ matrix.os.name }}
+          RUST_ARCH: ${{ matrix.arch }}
+        run: |
+          echo target=$(.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
+      - name: Rust toolkit setup
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          target: ${{ steps.rust-target.outputs.target }}
+      - name: Build binary ${{ matrix.os.name }}-${{ matrix.arch }}
+        env:
+          RUST_OS: ${{ matrix.os.name }}
+          RUST_ARCH: ${{ matrix.arch }}
+        run: .github/workflows/scripts/rust-build.sh
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          tag: ${{ inputs.version }}
+          release_id: ${{ inputs.version }}
+          file: target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
+          asset_name: elasticsearch-core-mcp-server-${{ matrix.os.name }})-${{ matrix.arch }}
+          overwrite: true
