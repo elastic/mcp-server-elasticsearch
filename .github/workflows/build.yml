@@ -9,30 +9,39 @@ on:
 
 jobs:
   build-binary:
-    runs-on: ${{ matrix.os.runner }}
+    runs-on: ${{ matrix.target.runner }}
     permissions:
       contents: write
       id-token: write
     strategy:
       fail-fast: false
       matrix:
-        arch:
-          - x64
-          - arm64
-        os:
-          - name: linux
+        target:
+          - name: linux-x86_64
             runner: ubuntu-latest
             ext: ""
-          - name: windows
+            target: x86_64-unknown-linux-gnu
+          - name: windows-x86_64
             runner: windows-latest
             ext: ".exe"
-          - name: macos
+            target: x86_64-pc-windows-msvc
+          - name: macos-x86_64
             runner: macos-latest
             ext: ""
+            target: x86_64-apple-darwin
+          - name: linux-arm64
+            runner: ubuntu-latest
+            ext: ""
+            target: aarch64-unknown-linux-gnu
+          - name: windows-arm64
+            runner: windows-latest
+            ext: ".exe"
+            target: aarch64-pc-windows-msvc
+          - name: macos-arm64
+            runner: macos-latest
+            ext: ""
+            target: aarch64-apple-darwin
     steps:
-      - name: Install missing OS dependencies for Linux
-        if: ${{ matrix.os.name == 'linux' && matrix.arch == 'arm64' }}
-        run: sudo apt update && sudo apt install -y gcc-aarch64-linux-gnu
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -42,30 +51,17 @@ jobs:
         with:
           ref: ${{ inputs.version }}
           path: checkout-tag
-      - name: Get Rust target name
-        id: rust-target
-        env:
-          RUST_OS: ${{ matrix.os.name }}
-          RUST_ARCH: ${{ matrix.arch }}
-        shell: bash
-        run: |
-          echo target=$($GITHUB_WORKSPACE/checkout-main/.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
-      - name: Rust toolkit setup
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Build binary
+        uses: houseabsolute/actions-rust-cross@v1.0.4
         with:
-          target: ${{ steps.rust-target.outputs.target }}
-      - name: Build binary ${{ matrix.os.name }}-${{ matrix.arch }}
-        env:
-          RUST_OS: ${{ matrix.os.name }}
-          RUST_ARCH: ${{ matrix.arch }}
-        shell: bash
-        run: |
-          cd $GITHUB_WORKSPACE/checkout-tag
-          $GITHUB_WORKSPACE/checkout-main/.github/workflows/scripts/rust-build.sh
+          command: build
+          target: ${{ matrix.target.target }}
+          args: "--locked --release"
+          working-directory: ${{ github.workspace }}/checkout-tag
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           tag: ${{ inputs.version }}
-          file: checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server${{ matrix.os.ext }}
-          asset_name: elasticsearch-core-mcp-server-${{ inputs.version }}-${{ matrix.os.name }}-${{ matrix.arch }}${{ matrix.os.ext }}
+          file: checkout-tag/target/${{ matrix.target.target }}/release/elasticsearch-core-mcp-server${{ matrix.target.ext }}
+          asset_name: elasticsearch-core-mcp-server-${{ inputs.version }}-${{ matrix.target.name }}${{ matrix.target.ext }}
           overwrite: true
