@@ -41,6 +41,7 @@ jobs:
         env:
           RUST_OS: ${{ matrix.os.name }}
           RUST_ARCH: ${{ matrix.arch }}
+        shell: bash
         run: |
           echo target=$($GITHUB_WORKSPACE/checkout-main/.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
       - name: Rust toolkit setup
@@ -51,6 +52,7 @@ jobs:
         env:
           RUST_OS: ${{ matrix.os.name }}
           RUST_ARCH: ${{ matrix.arch }}
+        shell: bash
         run: |
           cd $GITHUB_WORKSPACE/checkout-tag
           $GITHUB_WORKSPACE/checkout-main/.github/workflows/scripts/rust-build.sh
