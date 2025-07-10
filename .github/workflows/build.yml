@@ -30,14 +30,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
+          path: checkout-main
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
           ref: ${{ inputs.version }}
+          path: checkout-tag
       - name: Get Rust target name
         id: rust-target
         env:
           RUST_OS: ${{ matrix.os.name }}
           RUST_ARCH: ${{ matrix.arch }}
         run: |
-          echo target=$(.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
+          echo target=$(checkout-main/.github/workflows/scripts/rust-build.sh --print-target) >> "$GITHUB_OUTPUT"
       - name: Rust toolkit setup
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
@@ -46,12 +51,14 @@ jobs:
         env:
           RUST_OS: ${{ matrix.os.name }}
           RUST_ARCH: ${{ matrix.arch }}
-        run: .github/workflows/scripts/rust-build.sh
+        run: |
+          cd checkout-tag
+          ../checkout-main/.github/workflows/scripts/rust-build.sh
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
           tag: ${{ inputs.version }}
           release_id: ${{ inputs.version }}
-          file: target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
-          asset_name: elasticsearch-core-mcp-server-${{ matrix.os.name }})-${{ matrix.arch }}
+          file: checkout-tag/target/${{ steps.rust-target.outputs.target }}/release/elasticsearch-core-mcp-server
+          asset_name: elasticsearch-core-mcp-server.${{ inputs.version }}.${{ matrix.os.name }})-${{ matrix.arch }}
           overwrite: true
