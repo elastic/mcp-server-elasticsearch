@@ -64,9 +64,9 @@ pub async fn run_http(cmd: HttpCommand) -> anyhow::Result<()> {
     let address: SocketAddr = if let Some(addr) = cmd.address {
         addr
     } else if is_container() {
-        SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080)
+        SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8000)
     } else {
-        SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8080)
+        SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8000)
     };
 
     let ct = HttpProtocol::serve_with_config(

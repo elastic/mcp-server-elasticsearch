@@ -27,5 +27,5 @@ FROM cgr.dev/chainguard/wolfi-base:latest
 
 COPY --from=builder /app/target/release/elasticsearch-core-mcp-server /usr/local/bin/elasticsearch-core-mcp-server
 
-EXPOSE 8080/tcp
+EXPOSE 8000/tcp
 ENTRYPOINT ["/usr/local/bin/elasticsearch-core-mcp-server"]

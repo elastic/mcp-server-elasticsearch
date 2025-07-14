@@ -42,7 +42,7 @@ pub struct HttpCommand {
     #[clap(short, long)]
     pub config: Option<PathBuf>,
 
-    /// Address to listen to [default: 127.0.0.1:8080]
+    /// Address to listen to [default: 127.0.0.1:8000]
     #[clap(long, value_name = "IP_ADDRESS:PORT")]
     pub address: Option<std::net::SocketAddr>,
 
