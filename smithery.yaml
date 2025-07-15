@@ -21,20 +21,26 @@ startCommand:
       esPassword:
         type: string
         description: Elasticsearch password for basic authentication (optional)
-      esCaCert:
-        type: string
-        description: Path to a custom CA certificate if needed (optional)
   commandFunction:
     # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
     |-
     (config) => ({
-      command: 'node',
-      args: ['dist/index.js'],
+      command: 'docker',
+      args: [
+        'run',
+        '-i',
+        '--rm',
+        '-e', 'ES_URL',
+        '-e', 'ES_API_KEY',
+        '-e', 'ES_USERNAME',
+        '-e', 'ES_PASSWORD',
+        'docker.elastic.co/mcp/elasticsearch',
+        'stdio',
+      ],
       env: Object.assign({
         ES_URL: config.esUrl
       }, config.esApiKey ? { ES_API_KEY: config.esApiKey } : {},
       config.esUsername && config.esPassword ? { ES_USERNAME: config.esUsername, ES_PASSWORD: config.esPassword } : {},
-      config.esCaCert ? { ES_CA_CERT: config.esCaCert } : {})
     })
   exampleConfig:
     esUrl: http://localhost:9200
