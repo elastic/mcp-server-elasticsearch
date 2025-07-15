@@ -1,6 +1,7 @@
 # Copyright Elasticsearch B.V. and contributors
 # SPDX-License-Identifier: Apache-2.0
 
+# Custom image to start
 # To create a multi-arch image, run:
 # docker buildx build --platform linux/amd64,linux/arm64 --tag elasticsearch-core-mcp-server .
 
@@ -23,9 +24,14 @@ RUN cargo build --release
 
 #--------------------------------------------------------------------------------------------------
 
-FROM cgr.dev/chainguard/wolfi-base:latest
+FROM debian:stable-slim
+
+RUN apt-get update && apt install -y libssl-dev && apt clean && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/target/release/elasticsearch-core-mcp-server /usr/local/bin/elasticsearch-core-mcp-server
 
-EXPOSE 8080/tcp
+ENV HTTP_ADDRESS="0.0.0.0:8000"
+
+EXPOSE 8000/tcp
 ENTRYPOINT ["/usr/local/bin/elasticsearch-core-mcp-server"]
+CMD ["http"]

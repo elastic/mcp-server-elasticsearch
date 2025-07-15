@@ -28,7 +28,6 @@ use is_container::is_container;
 use rmcp::transport::stdio;
 use rmcp::transport::streamable_http_server::session::never::NeverSessionManager;
 use rmcp::{RoleServer, Service, ServiceExt};
-use std::io::ErrorKind;
 use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -45,6 +44,7 @@ impl Cli {
 }
 
 pub async fn run_stdio(cmd: StdioCommand) -> anyhow::Result<()> {
+    tracing::info!("Starting stdio server");
     let handler = setup_services(&cmd.config).await?;
     let service = handler.serve(stdio()).await.inspect_err(|e| {
         tracing::error!("serving error: {:?}", e);
@@ -64,9 +64,9 @@ pub async fn run_http(cmd: HttpCommand) -> anyhow::Result<()> {
     let address: SocketAddr = if let Some(addr) = cmd.address {
         addr
     } else if is_container() {
-        SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8000)
+        SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080)
     } else {
-        SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8000)
+        SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8080)
     };
 
     let ct = HttpProtocol::serve_with_config(
@@ -82,18 +82,15 @@ pub async fn run_http(cmd: HttpCommand) -> anyhow::Result<()> {
     )
     .await?;
 
+    tracing::info!("Starting http server at address {}", address);
+
     tokio::signal::ctrl_c().await?;
     ct.cancel();
     Ok(())
 }
 
 pub async fn setup_services(config: &Option<PathBuf>) -> anyhow::Result<impl Service<RoleServer> + Clone> {
-    // Read config file and expand variables, also accepting .env files
-    match dotenvy::dotenv() {
-        Err(dotenvy::Error::Io(io_err)) if io_err.kind() == ErrorKind::NotFound => {}
-        Err(err) => return Err(err)?,
-        Ok(_) => {}
-    }
+    // Read config file and expand variables
 
     let config = if let Some(path) = config {
         std::fs::read_to_string(path)?

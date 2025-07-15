@@ -15,6 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
+use std::io::ErrorKind;
 use clap::Parser;
 use elasticsearch_core_mcp_server::cli::Cli;
 use tracing_subscriber::EnvFilter;
@@ -22,6 +23,14 @@ use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+
+    // Also accept .env files
+    match dotenvy::dotenv() {
+        Err(dotenvy::Error::Io(io_err)) if io_err.kind() == ErrorKind::NotFound => {}
+        Err(err) => return Err(err)?,
+        Ok(_) => {}
+    }
+
     let env_args = std::env::vars().find(|(k, _v)| k == "CLI_ARGS").map(|(_k, v)| v);
 
     let cli = if let Some(env_args) = env_args {
@@ -43,7 +52,7 @@ async fn main() -> anyhow::Result<()> {
         .with_ansi(false)
         .init();
 
-    tracing::info!("Starting MCP server");
+    tracing::info!("Elasticsearch MCP server, version {}", env!("CARGO_PKG_VERSION"));
 
     cli.run().await
 }

@@ -42,8 +42,8 @@ pub struct HttpCommand {
     #[clap(short, long)]
     pub config: Option<PathBuf>,
 
-    /// Address to listen to [default: 127.0.0.1:8000]
-    #[clap(long, value_name = "IP_ADDRESS:PORT")]
+    /// Address to listen to [default: 127.0.0.1:8080]
+    #[clap(long, value_name = "IP_ADDRESS:PORT", env = "HTTP_ADDRESS")]
     pub address: Option<std::net::SocketAddr>,
 
     /// Also start an SSE server on '/sse'
