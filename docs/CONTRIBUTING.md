@@ -8,33 +8,18 @@ Elasticsearch MCP Server client is open source and we love to receive contributi
 
 There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports and feature requests or writing code.
 
-
 Contributions are [released](https://help.github.com/articles/github-terms-of-service/#6-contributions-under-repository-license) under the [project's license](../LICENSE).
 
 Please note that this project follows the [Elastic's Open Source Community Code of Conduct][code-of-conduct].
 
 ## Setup
 
-1. Install Node.js 18+ (using [nvm](https://github.com/nvm-sh/nvm) is recommended)
-   ```bash
-   nvm use
-   ```
-2. Install dependencies
-   ```bash
-   npm install
-   ```
-3. Build the project
-   ```bash
-   npm run build
-   ```
+1. Install [Rust](https://www.rust-lang.org/learn/get-started)
+2. Build the project
 
-To build the Docker image, run:
-
-```sh
-npm run build-docker-image
-```
-
-This builds a multi-architecture image for amd64 and arm64. If you don't have a configuration that allows multi-architecture builds, simply run `docker build -t mcp/elasticsearch` .
+   ```bash
+   cargo build
+   ```
 
 ## Start Elasticsearch
 
@@ -42,13 +27,14 @@ You can use either:
 
 1. **Elastic Cloud** - Use an existing Elasticsearch deployment and your API key
 2. **Local Elasticsearch** - Run Elasticsearch locally using the [start-local](https://www.elastic.co/guide/en/elasticsearch/reference/current/run-elasticsearch-locally.html) script:
+
    ```bash
    curl -fsSL https://elastic.co/start-local | sh
    ```
 
    This starts Elasticsearch and Kibana with Docker:
-   - Elasticsearch: http://localhost:9200
-   - Kibana: http://localhost:5601
+   - Elasticsearch: <http://localhost:9200>
+   - Kibana: <http://localhost:5601>
 
 > [!NOTE]
 > The `start-local` setup is for development only. It uses basic authentication and disables HTTPS.
@@ -58,12 +44,19 @@ You can use either:
 1. [Fork][fork] and clone the repository
 2. Create a new branch: `git checkout -b my-branch-name`
 3. Make your changes
-4. Test locally with the MCP Inspector:
+4. Run the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
+
    ```bash
-   ES_URL=your-elasticsearch-url ES_API_KEY=your-api-key npm run inspector
+   npx -y @modelcontextprotocol/inspector
    ```
-5. [Test with MCP Client](../README.md#developing-locally)
-6. Push to your fork and [submit a pull request][pr]
+
+5. Build and run the server with your changes (see README for more details on configuration and command arguments):
+
+   ```bash
+   cargo run -- http
+   ```
+
+6. Commit changes, push to your fork and [submit a pull request][pr]
 
 ## Best Practices
 
