@@ -21,7 +21,3 @@ steps:
               command: "/agent/check-catalog-info.sh"
               agents:
                 image: "docker.elastic.co/ci-agent-images/pipelib:0.15.0@sha256:753c420cf254a7ed0be658ab153965e0708fe0636dfe2fe57e6e4ae0972bb681"
-          - default:
-              config:
-                label: ":pipeline: Upload default Pipeline"
-                command: "buildkite-agent pipeline upload .buildkite/default-pipeline.yml"

@@ -4,7 +4,7 @@
 [pr]: https://github.com/elastic/mcp-server-elasticsearch/compare
 [code-of-conduct]: https://www.elastic.co/community/codeofconduct
 
-Elasticsearch MCP Server client is open source and we love to receive contributions from our community — you!
+Elasticsearch MCP Server is open source, and we love to receive contributions from our community — you!
 
 There are many ways to contribute, from writing tutorials or blog posts, improving the documentation, submitting bug reports and feature requests or writing code.
 
@@ -14,11 +14,17 @@ Please note that this project follows the [Elastic's Open Source Community Code 
 
 ## Setup
 
-1. Install [Rust](https://www.rust-lang.org/learn/get-started)
-2. Build the project
+1. Install Rust (using [rustup](https://www.rust-lang.org/tools/install) is recommended)
 
-   ```bash
+2. Build the project:
+   ```sh
    cargo build
+   ```
+
+   or to build the Docker image, run:
+
+   ```sh
+   docker build -t mcp/elasticsearch
    ```
 
 ## Start Elasticsearch
@@ -43,20 +49,14 @@ You can use either:
 
 1. [Fork][fork] and clone the repository
 2. Create a new branch: `git checkout -b my-branch-name`
-3. Make your changes
-4. Run the [MCP Inspector](https://github.com/modelcontextprotocol/inspector):
-
+3. Make your changes and add tests
+4. Fix `cargo clippy` warnings, run `cargo fmt` and `cargo test`
+5. Test locally with the MCP Inspector:
    ```bash
-   npx -y @modelcontextprotocol/inspector
+   npx @modelcontextprotocol/inspector
    ```
-
-5. Build and run the server with your changes (see README for more details on configuration and command arguments):
-
-   ```bash
-   cargo run -- http
-   ```
-
-6. Commit changes, push to your fork and [submit a pull request][pr]
+7. [Test with MCP Client](../README.md#installation--setup)
+8. Push to your fork and [submit a pull request][pr]
 
 ## Best Practices
 
@@ -65,8 +65,6 @@ You can use either:
 - Include tests for your changes
 - Keep PRs focused on a single concern
 - Update documentation as needed
-- Use TypeScript with proper typing
-- Add JSDoc comments to new functions
 
 ## Getting Help
 

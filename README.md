@@ -22,6 +22,10 @@ This server connects agents to your Elasticsearch data using the Model Context P
 * Elasticsearch authentication credentials (API key or username/password)
 * An MCP Client (e.g. [Claude Desktop](https://claude.ai/download), [Goose](https://block.github.io/goose/))
 
+**Supported Elasticsearch versions**
+
+Versions `8.x` and `9.x` are officially supported. Earlier versions may partially work, at your own risk and with no guarantees made.
+
 ## Installation & Setup
 
 > [!NOTE]

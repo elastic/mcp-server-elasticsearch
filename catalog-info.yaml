@@ -34,8 +34,6 @@ spec:
       repository: elastic/mcp-server-elasticsearch
       pipeline_file: ".buildkite/pipeline.yml"
       teams:
-        search-extract-and-transform:
-          access_level: MANAGE_BUILD_AND_READ
         devtools-team:
           access_level: MANAGE_BUILD_AND_READ
         everyone:
@@ -62,8 +60,6 @@ spec:
       repository: elastic/mcp-server-elasticsearch
       pipeline_file: ".buildkite/docker.yml"
       teams:
-        search-extract-and-transform:
-          access_level: MANAGE_BUILD_AND_READ
         devtools-team:
           access_level: MANAGE_BUILD_AND_READ
         everyone:
