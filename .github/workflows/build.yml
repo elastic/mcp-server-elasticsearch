@@ -1,5 +1,7 @@
 name: Build Rust binaries
 on:
+  release:
+    types: [published]
   workflow_dispatch:
     inputs:
       version:
@@ -42,6 +44,15 @@ jobs:
             ext: ""
             target: aarch64-apple-darwin
     steps:
+      - name: Get release tag value
+        id: version-tag
+        run: |
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "ref=${{ inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            ref=$(echo "$GITHUB_REF" | cut -d '/' -f3)
+            echo "ref=$ref" >> $GITHUB_OUTPUT
+          fi
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
@@ -49,7 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
         with:
-          ref: ${{ inputs.version }}
+          ref: ${{ steps.version-tag.outputs.ref }}
           path: checkout-tag
       - name: Add target config for arm64 on Linux
         if: ${{ matrix.target.name == 'linux-arm64' }}
@@ -68,7 +79,7 @@ jobs:
       - name: Upload binaries to release
         uses: svenstaro/upload-release-action@v2
         with:
-          tag: ${{ inputs.version }}
+          tag: ${{ steps.version-tag.outputs.ref }}
           file: checkout-tag/target/${{ matrix.target.target }}/release/elasticsearch-core-mcp-server${{ matrix.target.ext }}
-          asset_name: elasticsearch-core-mcp-server-${{ inputs.version }}-${{ matrix.target.name }}${{ matrix.target.ext }}
+          asset_name: elasticsearch-core-mcp-server-${{ steps.version-tag.outputs.ref }}-${{ matrix.target.name }}${{ matrix.target.ext }}
           overwrite: true
