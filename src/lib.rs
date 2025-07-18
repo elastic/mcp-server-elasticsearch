@@ -100,7 +100,7 @@ pub async fn setup_services(config: &Option<PathBuf>) -> anyhow::Result<impl Ser
             "elasticsearch": {
                 "url": "${ES_URL}",
                 "api_key": "${ES_API_KEY:}",
-                "username": "${ES_LOGIN:}",
+                "username": "${ES_USERNAME:}",
                 "password": "${ES_PASSWORD:}",
                 "ssl_skip_verify": "${ES_SSL_SKIP_VERIFY:false}"
             }
