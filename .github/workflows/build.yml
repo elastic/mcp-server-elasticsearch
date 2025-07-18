@@ -46,6 +46,7 @@ jobs:
     steps:
       - name: Get release tag value
         id: version-tag
+        shell: bash
         run: |
           if [ -n "${{ inputs.version }}" ]; then
             echo "ref=${{ inputs.version }}" >> $GITHUB_OUTPUT
