@@ -2,7 +2,7 @@
 
 > [!CAUTION]
 >
-> **WARNING: this is MCP server is EXPERIMENTAL.**
+> **WARNING: this MCP server is EXPERIMENTAL.**
 
 Connect to your Elasticsearch data directly from any MCP Client using the Model Context Protocol (MCP).
 
