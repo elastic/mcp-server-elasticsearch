@@ -12,9 +12,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 
 # Cache dependencies
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    mkdir -p ./src/bin && \
+RUN mkdir -p ./src/bin && \
     echo "pub fn main() {}" > ./src/bin/elasticsearch-core-mcp-server.rs && \
     cargo build --release
 
@@ -36,6 +34,7 @@ EOF
 
 COPY --from=builder /app/target/release/elasticsearch-core-mcp-server /usr/local/bin/elasticsearch-core-mcp-server
 
+ENV CONTAINER_MODE=true
 ENV HTTP_ADDRESS="0.0.0.0:8000"
 
 EXPOSE 8000/tcp

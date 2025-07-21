@@ -11,9 +11,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 
 # Cache dependencies
-RUN --mount=type=cache,target=/usr/local/cargo/registry \
-    --mount=type=cache,target=/app/target \
-    mkdir -p ./src/bin && \
+RUN mkdir -p ./src/bin && \
     echo "pub fn main() {}" > ./src/bin/elasticsearch-core-mcp-server.rs && \
     cargo build --release
 
@@ -26,6 +24,8 @@ RUN cargo build --release
 FROM cgr.dev/chainguard/wolfi-base:latest
 
 COPY --from=builder /app/target/release/elasticsearch-core-mcp-server /usr/local/bin/elasticsearch-core-mcp-server
+
+ENV CONTAINER_MODE=true
 
 EXPOSE 8080/tcp
 ENTRYPOINT ["/usr/local/bin/elasticsearch-core-mcp-server"]

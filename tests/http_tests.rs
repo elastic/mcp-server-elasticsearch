@@ -36,6 +36,7 @@ async fn http_tool_list() -> anyhow::Result<()> {
     let addr = find_address()?;
 
     let cli = cli::Cli {
+        container_mode: false,
         command: cli::Command::Http(cli::HttpCommand {
             config: None,
             address: Some(addr),
@@ -116,6 +117,7 @@ async fn end_to_end() -> anyhow::Result<()> {
     // Start an http MCP server
     let addr = find_address()?;
     let cli = cli::Cli {
+        container_mode: false,
         command: cli::Command::Http(cli::HttpCommand {
             config: None,
             address: Some(addr),

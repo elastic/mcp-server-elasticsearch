@@ -469,7 +469,6 @@ dependencies = [
  "futures-util",
  "http",
  "indexmap 2.9.0",
- "is-container",
  "itertools",
  "reqwest",
  "rmcp",
@@ -1050,15 +1049,6 @@ name = "ipnet"
 version = "2.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "469fb0b9cefa57e3ef31275ee7cacb78f2fdca44e4765491884a2b119d4eb130"
-
-[[package]]
-name = "is-container"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7e073af786923841869a2d134062c20650026d7ed47af5cca6742459e77a20f2"
-dependencies = [
- "once_cell",
-]
 
 [[package]]
 name = "is_terminal_polyfill"

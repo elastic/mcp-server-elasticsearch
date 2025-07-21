@@ -25,6 +25,10 @@ use std::path::PathBuf;
 /// Elastic MCP server
 #[derive(Debug, Parser)]
 pub struct Cli {
+    /// Container mode: change default http address, rewrite localhost to the host's address
+    #[clap(global=true, long, env = "CONTAINER_MODE")]
+    pub container_mode: bool,
+
     #[clap(subcommand)]
     pub command: Command,
 }
@@ -51,7 +55,7 @@ pub struct HttpCommand {
     pub sse: bool,
 }
 
-/// Start a stdio server
+/// Start an stdio server
 #[derive(Debug, Args)]
 pub struct StdioCommand {
     /// Config file

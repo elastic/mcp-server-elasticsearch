@@ -175,7 +175,7 @@ pub enum SearchTemplate {
 pub struct ElasticsearchMcp {}
 
 impl ElasticsearchMcp {
-    pub fn new_with_config(config: ElasticsearchMcpConfig) -> anyhow::Result<base_tools::EsBaseTools> {
+    pub fn new_with_config(config: ElasticsearchMcpConfig, container_mode: bool) -> anyhow::Result<base_tools::EsBaseTools> {
         let creds = if let Some(api_key) = config.api_key.clone() {
             Some(Credentials::EncodedApiKey(api_key))
         } else if let Some(login) = config.login.clone() {
@@ -190,7 +190,10 @@ impl ElasticsearchMcp {
             return Err(anyhow::Error::msg("Elasticsearch URL is empty"));
         }
 
-        let url = Url::parse(url)?;
+        let mut url = Url::parse(url)?;
+        if container_mode {
+            rewrite_localhost(&mut url)?;
+        }
 
         let pool = elasticsearch::http::transport::SingleNodeConnectionPool::new(url.clone());
         let mut transport = elasticsearch::http::transport::TransportBuilder::new(pool);
@@ -213,6 +216,30 @@ impl ElasticsearchMcp {
 
 //------------------------------------------------------------------------------------------------
 // Utilities
+
+/// Rewrite urls targeting `localhost` to a hostname that maps to the container host, if possible.
+///
+/// The host name for the container host depends on the OCI runtime used. This is useful to accept
+/// Elasticsearch URLs like `http://localhost:9200`.
+fn rewrite_localhost(url: &mut Url) -> anyhow::Result<()> {
+    use std::net::ToSocketAddrs;
+    let aliases = &[
+        "host.docker.internal", // Docker
+        "host.containers.internal", // Podman, maybe others
+    ];
+
+    if let Some(host) = url.host_str() && host == "localhost" {
+        for alias in aliases {
+            if let Ok(mut alias_add) = (*alias, 80).to_socket_addrs() && alias_add.next().is_some() {
+                url.set_host(Some(alias))?;
+                tracing::info!("Container mode: using '{alias}' instead of 'localhost'");
+                return Ok(());
+            }
+        }
+    }
+    tracing::warn!("Container mode: cound not find a replacement for 'localhost'");
+    Ok(())
+}
 
 /// Map any error to an internal error of the MCP server
 pub fn internal_error(e: impl std::error::Error) -> rmcp::Error {

@@ -28,7 +28,8 @@ pub async fn main() -> anyhow::Result<()> {
         config: Some("elastic-mcp.json5".parse()?),
         address: None,
         sse: true,
-    })
+    },
+    false)
     .await?;
 
     Ok(())

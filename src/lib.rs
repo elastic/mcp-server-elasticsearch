@@ -24,7 +24,6 @@ use crate::cli::{Cli, Command, Configuration, HttpCommand, StdioCommand};
 use crate::protocol::http::{HttpProtocol, HttpServerConfig};
 use crate::servers::elasticsearch;
 use crate::utils::interpolator;
-use is_container::is_container;
 use rmcp::transport::stdio;
 use rmcp::transport::streamable_http_server::session::never::NeverSessionManager;
 use rmcp::{RoleServer, Service, ServiceExt};
@@ -37,15 +36,15 @@ use tokio_util::sync::CancellationToken;
 impl Cli {
     pub async fn run(self) -> anyhow::Result<()> {
         match self.command {
-            Command::Stdio(cmd) => run_stdio(cmd).await,
-            Command::Http(cmd) => run_http(cmd).await,
+            Command::Stdio(cmd) => run_stdio(cmd, self.container_mode).await,
+            Command::Http(cmd) => run_http(cmd, self.container_mode).await,
         }
     }
 }
 
-pub async fn run_stdio(cmd: StdioCommand) -> anyhow::Result<()> {
+pub async fn run_stdio(cmd: StdioCommand, container_mode: bool) -> anyhow::Result<()> {
     tracing::info!("Starting stdio server");
-    let handler = setup_services(&cmd.config).await?;
+    let handler = setup_services(&cmd.config, container_mode).await?;
     let service = handler.serve(stdio()).await.inspect_err(|e| {
         tracing::error!("serving error: {:?}", e);
     })?;
@@ -58,12 +57,12 @@ pub async fn run_stdio(cmd: StdioCommand) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn run_http(cmd: HttpCommand) -> anyhow::Result<()> {
-    let handler = setup_services(&cmd.config).await?;
+pub async fn run_http(cmd: HttpCommand, container_mode: bool) -> anyhow::Result<()> {
+    let handler = setup_services(&cmd.config, container_mode).await?;
     let server_provider = move || handler.clone();
     let address: SocketAddr = if let Some(addr) = cmd.address {
         addr
-    } else if is_container() {
+    } else if container_mode {
         SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 8080)
     } else {
         SocketAddr::new(IpAddr::V4(Ipv4Addr::LOCALHOST), 8080)
@@ -89,7 +88,7 @@ pub async fn run_http(cmd: HttpCommand) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub async fn setup_services(config: &Option<PathBuf>) -> anyhow::Result<impl Service<RoleServer> + Clone> {
+pub async fn setup_services(config: &Option<PathBuf>, container_mode: bool) -> anyhow::Result<impl Service<RoleServer> + Clone> {
     // Read config file and expand variables
 
     let config = if let Some(path) = config {
@@ -123,6 +122,6 @@ pub async fn setup_services(config: &Option<PathBuf>) -> anyhow::Result<impl Ser
         Err(err) => return Err(err)?,
     };
 
-    let handler = elasticsearch::ElasticsearchMcp::new_with_config(config.elasticsearch)?;
+    let handler = elasticsearch::ElasticsearchMcp::new_with_config(config.elasticsearch, container_mode)?;
     Ok(handler)
 }
