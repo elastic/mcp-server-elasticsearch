@@ -71,7 +71,7 @@ jobs:
           echo '[target.aarch64-unknown-linux-gnu]' >> checkout-tag/.cargo/config
           echo 'linker = "aarch64-linux-gnu-gcc"' >> checkout-tag/.cargo/config
       - name: Build binary
-        uses: houseabsolute/actions-rust-cross@v1.0.4
+        uses: houseabsolute/actions-rust-cross@9a1618ffb70e8374ab5f48fcccea3ebeacf57971 # v1.0.5
         with:
           command: build
           target: ${{ matrix.target.target }}
