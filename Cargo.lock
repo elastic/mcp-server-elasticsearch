@@ -2101,9 +2101,9 @@ dependencies = [
 
 [[package]]
 name = "sse-stream"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f649a9f9e91db2ed32f3724516eac2bc09fab77fc33be8f670f5619b9dc6c3f"
+checksum = "eb4dc4d33c68ec1f27d386b5610a351922656e1fdf5c05bbaad930cd1519479a"
 dependencies = [
  "bytes",
  "futures-util",
