@@ -84,13 +84,13 @@ const ConfigSchema = z
     version: z
       .string()
       .optional()
-      .transform((val) => (['8', '9'].includes(val || '') ? val : '9'))
+      .transform((val) => (['8', '9'].includes(val ?? '') ? val : '9'))
       .describe('Elasticsearch version (8, or 9)'),
 
     sslSkipVerify: z
       .boolean()
       .optional()
-      .describe('Skip SSL certificate verification'),
+      .describe('Skip SSL certificate verification')
 
   })
   .refine(
@@ -168,7 +168,7 @@ export async function createElasticsearchMcpServer (config: ElasticsearchConfig)
   }
 
   // Skip verification if requested
-  if (sslSkipVerify != null && sslSkipVerify === true) {
+  if (sslSkipVerify != null && sslSkipVerify) {
     clientOptions.tls.rejectUnauthorized = false
   }
 
@@ -286,16 +286,16 @@ export async function createElasticsearchMcpServer (config: ElasticsearchConfig)
     }
   )
 
-  // Tool 3: Search an index with simplified parameters
+  // Tool 3: Search a datastream with simplified parameters
   server.tool(
     'search',
     'Perform an Elasticsearch search with the provided query DSL. Highlights are always enabled.',
     {
-      index: z
+      datastream: z
         .string()
         .trim()
-        .min(1, 'Index name is required')
-        .describe('Name of the Elasticsearch index to search'),
+        .min(1, 'Datastream name is required')
+        .describe('Name of the Elasticsearch datastream to search'),
 
       queryBody: z
         .record(z.any())
@@ -316,26 +316,27 @@ export async function createElasticsearchMcpServer (config: ElasticsearchConfig)
           'Complete Elasticsearch query DSL object that can include query, size, from, sort, etc.'
         )
     },
-    async ({ index, queryBody }) => {
+    async ({ datastream, queryBody }) => {
       try {
         // Get mappings to identify text fields for highlighting
         const mappingResponse = await esClient.indices.getMapping({
-          index
+          index: datastream
         })
 
-        const indexMappings = mappingResponse[index]?.mappings ?? {}
+        const datastreamMappings = mappingResponse[datastream]?.mappings ??
+          Object.values(mappingResponse)[0]?.mappings ?? {}
 
         const searchRequest: estypes.SearchRequest = {
-          index,
+          index: datastream,
           ...queryBody
         }
 
         // Always do highlighting
-        if (indexMappings.properties != null) {
+        if (datastreamMappings.properties != null) {
           const textFields: Record<string, estypes.SearchHighlightField> = {}
 
           for (const [fieldName, fieldData] of Object.entries(
-            indexMappings.properties
+            datastreamMappings.properties
           )) {
             if (fieldData.type === 'text' || 'dense_vector' in fieldData) {
               textFields[fieldName] = {}
@@ -502,11 +503,11 @@ const config: ElasticsearchConfig = {
 async function main (): Promise<void> {
   // If we're running in a container (see Dockerfile), future-proof the command-line
   // by requiring the stdio protocol (http will come later)
-  if (process.env.RUNNING_IN_CONTAINER === "true") {
-    if (process.argv.length != 3 || process.argv[2] !== "stdio" ) {
-      console.log("Missing protocol argument.");
-      console.log("Usage: npm start stdio");
-      process.exit(1);
+  if (process.env.RUNNING_IN_CONTAINER === 'true') {
+    if (process.argv.length !== 3 || process.argv[2] !== 'stdio') {
+      console.log('Missing protocol argument.')
+      console.log('Usage: npm start stdio')
+      process.exit(1)
     }
   }
 
