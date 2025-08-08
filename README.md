@@ -24,7 +24,7 @@ This server connects agents to your Elasticsearch data using the Model Context P
 
 **Supported Elasticsearch versions**
 
-Versions `8.x` and `9.x` are officially supported. Earlier versions may partially work, at your own risk and with no guarantees made.
+This works with Elasticsearch versions `8.x` and `9.x`.
 
 ## Installation & Setup
 
