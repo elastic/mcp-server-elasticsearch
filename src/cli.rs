@@ -24,6 +24,7 @@ use std::path::PathBuf;
 
 /// Elastic MCP server
 #[derive(Debug, Parser)]
+#[command(version)]
 pub struct Cli {
     /// Container mode: change default http address, rewrite localhost to the host's address
     #[clap(global=true, long, env = "CONTAINER_MODE")]
