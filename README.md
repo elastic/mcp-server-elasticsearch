@@ -1,4 +1,5 @@
 # Elasticsearch MCP Server
+[![Trust Score](https://archestra.ai/mcp-catalog/api/badge/quality/elastic/mcp-server-elasticsearch)](https://archestra.ai/mcp-catalog/elastic__mcp-server-elasticsearch)
 
 > [!CAUTION]
 >
