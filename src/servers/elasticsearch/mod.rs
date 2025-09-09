@@ -279,3 +279,43 @@ pub async fn read_text(result: Result<Response, elasticsearch::Error>) -> Result
     let response = handle_error(result)?;
     response.text().await.map_err(internal_error)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_basic_auth_credential_setup() -> anyhow::Result<()> {
+        let config = ElasticsearchMcpConfig {
+            url: "http://localhost:9200".to_string(),
+            api_key: None,
+            login: Some("elastic".to_string()),
+            password: Some("changeme".to_string()),
+            ssl_skip_verify: false,
+            tools: Tools::default(),
+            prompts: vec![],
+        };
+
+        let result = ElasticsearchMcp::new_with_config(config, false);
+        assert!(result.is_ok());
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_missing_password_fails() {
+        let config = ElasticsearchMcpConfig {
+            url: "http://localhost:9200".to_string(),
+            api_key: None,
+            login: Some("elastic".to_string()),
+            password: None,
+            ssl_skip_verify: false,
+            tools: Tools::default(),
+            prompts: vec![],
+        };
+
+        let result = ElasticsearchMcp::new_with_config(config, false);
+        assert!(result.is_err());
+        assert!(result.err().unwrap().to_string().contains("missing password"));
+    }
+}
