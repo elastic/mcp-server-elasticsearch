@@ -99,7 +99,7 @@ pub async fn setup_services(config: &Option<PathBuf>, container_mode: bool) -> a
             "elasticsearch": {
                 "url": "${ES_URL}",
                 "api_key": "${ES_API_KEY:}",
-                "username": "${ES_USERNAME:}",
+                "login": "${ES_USERNAME:}",
                 "password": "${ES_PASSWORD:}",
                 "ssl_skip_verify": "${ES_SSL_SKIP_VERIFY:false}"
             }
@@ -124,4 +124,39 @@ pub async fn setup_services(config: &Option<PathBuf>, container_mode: bool) -> a
 
     let handler = elasticsearch::ElasticsearchMcp::new_with_config(config.elasticsearch, container_mode)?;
     Ok(handler)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::interpolator;
+
+    #[test]
+    fn test_config_parsing_with_basic_auth() -> anyhow::Result<()> {
+        let config_template = r#"{
+            "elasticsearch": {
+                "url": "${ES_URL}",
+                "api_key": "${ES_API_KEY:}",
+                "login": "${ES_USERNAME:}",
+                "password": "${ES_PASSWORD:}",
+                "ssl_skip_verify": "${ES_SSL_SKIP_VERIFY:false}"
+            }
+        }"#;
+
+        let lookup = |name: &str| match name {
+            "ES_URL" => Some("http://localhost:9200".to_string()),
+            "ES_USERNAME" => Some("elastic".to_string()),
+            "ES_PASSWORD" => Some("changeme".to_string()),
+            _ => None,
+        };
+
+        let expanded = interpolator::interpolate(config_template.to_string(), lookup)?;
+        let config: Configuration = serde_json5::from_str(&expanded)?;
+
+        assert_eq!(config.elasticsearch.url, "http://localhost:9200");
+        assert_eq!(config.elasticsearch.login, Some("elastic".to_string()));
+        assert_eq!(config.elasticsearch.password, Some("changeme".to_string()));
+
+        Ok(())
+    }
 }
