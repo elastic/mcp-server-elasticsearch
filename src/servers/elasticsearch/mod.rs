@@ -46,9 +46,9 @@ pub struct ElasticsearchMcpConfig {
     #[serde(default, deserialize_with = "none_if_empty_string")]
     pub api_key: Option<String>,
 
-    /// Login
+    /// Username
     #[serde(default, deserialize_with = "none_if_empty_string")]
-    pub login: Option<String>,
+    pub username: Option<String>,
 
     /// Password
     #[serde(default, deserialize_with = "none_if_empty_string")]
@@ -80,7 +80,7 @@ impl EsClientProvider {
 
     /// If the incoming request is a http request and has an `Authorization` header, use it
     /// to authenticate to the remote ES instance.
-    pub fn get(&self, context: RequestContext<RoleServer>) -> Cow<Elasticsearch> {
+    pub fn get(&self, context: RequestContext<RoleServer>) -> Cow<'_, Elasticsearch> {
         let client = &self.0;
 
         let Some(mut auth) = context
@@ -178,9 +178,9 @@ impl ElasticsearchMcp {
     pub fn new_with_config(config: ElasticsearchMcpConfig, container_mode: bool) -> anyhow::Result<base_tools::EsBaseTools> {
         let creds = if let Some(api_key) = config.api_key.clone() {
             Some(Credentials::EncodedApiKey(api_key))
-        } else if let Some(login) = config.login.clone() {
+        } else if let Some(username) = config.username.clone() {
             let pwd = config.password.clone().ok_or(anyhow::Error::msg("missing password"))?;
-            Some(Credentials::Basic(login, pwd))
+            Some(Credentials::Basic(username, pwd))
         } else {
             None
         };
