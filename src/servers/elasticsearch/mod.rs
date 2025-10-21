@@ -175,7 +175,10 @@ pub enum SearchTemplate {
 pub struct ElasticsearchMcp {}
 
 impl ElasticsearchMcp {
-    pub fn new_with_config(config: ElasticsearchMcpConfig, container_mode: bool) -> anyhow::Result<base_tools::EsBaseTools> {
+    pub fn new_with_config(
+        config: ElasticsearchMcpConfig,
+        container_mode: bool,
+    ) -> anyhow::Result<base_tools::EsBaseTools> {
         let creds = if let Some(api_key) = config.api_key.clone() {
             Some(Credentials::EncodedApiKey(api_key))
         } else if let Some(username) = config.username.clone() {
@@ -224,13 +227,17 @@ impl ElasticsearchMcp {
 fn rewrite_localhost(url: &mut Url) -> anyhow::Result<()> {
     use std::net::ToSocketAddrs;
     let aliases = &[
-        "host.docker.internal", // Docker
+        "host.docker.internal",     // Docker
         "host.containers.internal", // Podman, maybe others
     ];
 
-    if let Some(host) = url.host_str() && host == "localhost" {
+    if let Some(host) = url.host_str()
+        && host == "localhost"
+    {
         for alias in aliases {
-            if let Ok(mut alias_add) = (*alias, 80).to_socket_addrs() && alias_add.next().is_some() {
+            if let Ok(mut alias_add) = (*alias, 80).to_socket_addrs()
+                && alias_add.next().is_some()
+            {
                 url.set_host(Some(alias))?;
                 tracing::info!("Container mode: using '{alias}' instead of 'localhost'");
                 return Ok(());

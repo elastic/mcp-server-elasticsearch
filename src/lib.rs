@@ -88,7 +88,10 @@ pub async fn run_http(cmd: HttpCommand, container_mode: bool) -> anyhow::Result<
     Ok(())
 }
 
-pub async fn setup_services(config: &Option<PathBuf>, container_mode: bool) -> anyhow::Result<impl Service<RoleServer> + Clone> {
+pub async fn setup_services(
+    config: &Option<PathBuf>,
+    container_mode: bool,
+) -> anyhow::Result<impl Service<RoleServer> + Clone> {
     // Read config file and expand variables
 
     let config = if let Some(path) = config {
