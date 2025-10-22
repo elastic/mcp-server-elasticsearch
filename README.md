@@ -8,6 +8,11 @@ Connect to your Elasticsearch data directly from any MCP Client using the Model 
 
 This server connects agents to your Elasticsearch data using the Model Context Protocol. It allows you to interact with your Elasticsearch indices through natural language conversations.
 
+> [!TIP]
+> **Elastic Agent Builder MCP Server**
+>
+> Elastic 9.2.0+ and Serverless deployments also provide an [Agent Builder MCP server endpoint](https://www.elastic.co/docs/solutions/search/agent-builder/mcp-server) that exposes all built-in and custom [tools](https://www.elastic.co/docs/solutions/search/agent-builder/tools) you can use to power agentic workflows.
+
 ## Available Tools
 
 * `list_indices`: List all available Elasticsearch indices
