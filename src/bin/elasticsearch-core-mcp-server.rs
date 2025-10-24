@@ -54,5 +54,7 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Elasticsearch MCP server, version {}", env!("CARGO_PKG_VERSION"));
 
+    tracing::warn!("DEPRECATION NOTICE: This MCP server is deprecated and will only receive critical security updates going forward. It has been superseded by Elastic Agent Builder, which includes its own MCP server: https://ela.st/agent-builder-docs");
+
     cli.run().await
 }
