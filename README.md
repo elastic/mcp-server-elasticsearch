@@ -1,17 +1,12 @@
 # Elasticsearch MCP Server
 
 > [!CAUTION]
->
-> **WARNING: this MCP server is EXPERIMENTAL.**
+> This MCP server is deprecated and will only receive critical security updates going forward.
+> It has been superseded by [Elastic Agent Builder](https://ela.st/agent-builder-docs)'s [MCP endpoint](https://ela.st/agent-builder-mcp), which is available in Elastic 9.2.0+ and Elasticsearch Serverless projects.
 
 Connect to your Elasticsearch data directly from any MCP Client using the Model Context Protocol (MCP).
 
 This server connects agents to your Elasticsearch data using the Model Context Protocol. It allows you to interact with your Elasticsearch indices through natural language conversations.
-
-> [!TIP]
-> **Elastic Agent Builder MCP Server**
->
-> Elastic 9.2.0+ and Serverless deployments also provide an [Agent Builder MCP server endpoint](https://www.elastic.co/docs/solutions/search/agent-builder/mcp-server) that exposes all built-in and custom [tools](https://www.elastic.co/docs/solutions/search/agent-builder/tools) you can use to power agentic workflows.
 
 ## Available Tools
 
