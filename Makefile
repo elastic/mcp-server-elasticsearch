@@ -15,29 +15,19 @@ docker-image: ## Build a local docker image named es-mcp
 docker-multiarch-image: docker-buildx-builder ## Build an amd64+arm64 docker image
 	docker buildx build \
 		--platform linux/amd64,linux/arm64 \
-		--builder es-mcp-multi-arch \
-		--load \
-		--tag "$(ES_IMAGE)" .
-	docker tag "$(ES_IMAGE)" "$(ES_IMAGE_LATEST)"
+		--tag $(ES_IMAGE) .
+	docker tag $(ES_IMAGE) $(ES_IMAGE_LATEST)
 
 .PHONY: docker-image-aws
 docker-image-aws: docker-buildx-builder ## Build an arm64 docker image using AWS-specific configuration
 	docker buildx build \
 		--platform linux/arm64 \
-		--builder es-mcp-multi-arch \
-		--load \
 		--file Dockerfile-8000 \
-		--tag "$(AWS_IMAGE)" .
+		--tag $(AWS_IMAGE) .
 
 .PHONY: docker-buildx-builder
 docker-buildx-builder: ## Set up multi-arch Docker buildx builder
-	docker buildx ls | grep --silent es-mcp-multi-arch || \
-	docker buildx create \
-		--name es-mcp-multi-arch \
-		--driver docker-container \
-		--driver-opt default-load=true \
-		--platform linux/amd64,linux/arm64 \
-		--bootstrap
+	docker buildx create --use
 
 .PHONY: docker-push-elastic
 docker-push-elastic: docker-multiarch-image ## Push multi-arch image to docker.elastic.co
@@ -45,6 +35,6 @@ docker-push-elastic: docker-multiarch-image ## Push multi-arch image to docker.e
 		-u "devtoolsmachine" \
 		-p "$(vault read -field=password secret/ci/elastic-mcp-server-elasticsearch/devtoolsmachine)" \
 		docker.elastic.co
-	docker push "$(ES_IMAGE)"
-	docker push "$(ES_IMAGE_LATEST)"
+	docker push $(ES_IMAGE)
+	docker push $(ES_IMAGE_LATEST)
 	docker logout docker.elastic.co
