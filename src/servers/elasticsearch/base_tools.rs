@@ -125,20 +125,31 @@ impl EsBaseTools {
         Parameters(GetMappingsParams { index }): Parameters<GetMappingsParams>,
     ) -> Result<CallToolResult, rmcp::Error> {
         let es_client = self.es_client.get(req_ctx);
+
         let response = es_client
             .indices()
             .get_mapping(IndicesGetMappingParts::Index(&[&index]))
             .send()
             .await;
 
-        let response: MappingResponse = read_json(response).await?;
+        // Read response as raw JSON once
+        let response = read_json::<serde_json::Value>(response).await?;
 
-        // use the first mapping (we can have many if the name is a wildcard)
-        let mapping = response.values().next().unwrap();
+        // Try strict deserialization first
+        let parsed = match serde_json::from_value::<HashMap<String, Mappings>>(response.clone()) {
+            Ok(map_response) => {
+                let mapping = map_response.values().next().unwrap();
+                Content::json(mapping)?
+            }
+            Err(_) => {
+                // Fallback: Return the raw mapping JSON
+                Content::json(&response)?
+            }
+        };
 
         Ok(CallToolResult::success(vec![
             Content::text(format!("Mappings for index {index}:")),
-            Content::json(mapping)?,
+            parsed,
         ]))
     }
 
@@ -355,26 +366,15 @@ pub struct CatShardsResponse {
 
 //----- Index mappings
 
-pub type MappingResponse = HashMap<String, Mappings>;
-
 #[derive(Serialize, Deserialize)]
 pub struct Mappings {
     pub mappings: Mapping,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Mapping {
-    #[serde(rename = "_meta", skip_serializing_if = "Option::is_none")]
-    pub meta: Option<JsonObject>,
-    properties: HashMap<String, MappingProperty>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct MappingProperty {
-    #[serde(rename = "type")]
-    pub type_: String,
     #[serde(flatten)]
-    pub settings: HashMap<String, serde_json::Value>,
+    pub other: HashMap<String, serde_json::Value>,
 }
 
 //----- ES|QL
