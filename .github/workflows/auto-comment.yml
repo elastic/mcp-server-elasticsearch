@@ -1,24 +1,25 @@
 name: Add comment
 on:
   issues:
-    types:
-      - opened
+    types: [opened]
   pull_request_target:
-    types:
-      - opened
+    types: [opened]
+
 jobs:
   add-comment:
     runs-on: ubuntu-latest
-    permissions:
-      issues: write
     steps:
       - name: Add comment
-        run: gh issue comment "$NUMBER" --body "$BODY"
-        env:
-          GH_TOKEN: ${{ secrets.GH_ACCESS_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          NUMBER: ${{ github.event.number }}
-          BODY: >
-            # :warning: Deprecation warning
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const commentBody = "**Deprecation warning:** This MCP server is deprecated and will only receive critical security updates going forward. It has been superseded by [Elastic Agent Builder](https://ela.st/agent-builder-docs)'s [MCP endpoint](https://ela.st/agent-builder-mcp), which is available in Elastic 9.2.0+ and Elasticsearch Serverless projects.";
 
-            This MCP server is deprecated and will only receive critical security updates going forward. It has been superseded by [Elastic Agent Builder](https://ela.st/agent-builder-docs)'s [MCP endpoint](https://ela.st/agent-builder-mcp), which is available in Elastic 9.2.0+ and Elasticsearch Serverless projects.
+            github.rest.issues.createComment({
+              owner,
+              repo,
+              issue_number: context.payload.issue.number,
+              body: commentBody
+            });
