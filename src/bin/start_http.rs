@@ -24,12 +24,14 @@ use elasticsearch_core_mcp_server::run_http;
 pub async fn main() -> anyhow::Result<()> {
     println!("Current directory: {:?}", std::env::current_dir()?);
 
-    run_http(HttpCommand {
-        config: Some("elastic-mcp.json5".parse()?),
-        address: None,
-        sse: true,
-    },
-    false)
+    run_http(
+        HttpCommand {
+            config: Some("elastic-mcp.json5".parse()?),
+            address: None,
+            sse: true,
+        },
+        false,
+    )
     .await?;
 
     Ok(())
