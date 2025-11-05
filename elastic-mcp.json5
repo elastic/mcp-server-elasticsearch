@@ -2,7 +2,9 @@
 {
     // Configure the target Elasticsearch server
     "elasticsearch": {
-      "url": "${ES_URL}",
+      // URL is optional and defaults to http://localhost:9200
+      // Can also be overridden per-request via X-Elasticsearch-URL header (HTTP/SSE only)
+      "url": "${ES_URL:http://localhost:9200}",
       "api_key": "${ES_API_KEY:}",
       "username": "${ES_USERNAME:}",
       "password": "${ES_PASSWORD:}",

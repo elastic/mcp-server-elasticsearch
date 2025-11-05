@@ -39,9 +39,9 @@ pub struct EsBaseTools {
 }
 
 impl EsBaseTools {
-    pub fn new(es_client: Elasticsearch) -> Self {
+    pub fn new(es_client: Elasticsearch, ssl_skip_verify: bool) -> Self {
         Self {
-            es_client: EsClientProvider::new(es_client),
+            es_client: EsClientProvider::new(es_client, ssl_skip_verify),
             tool_router: Self::tool_router(),
         }
     }

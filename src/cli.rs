@@ -52,7 +52,7 @@ pub struct HttpCommand {
     pub address: Option<std::net::SocketAddr>,
 
     /// Also start an SSE server on '/sse'
-    #[clap(long)]
+    #[clap(long, env = "ENABLE_SSE")]
     pub sse: bool,
 }
 

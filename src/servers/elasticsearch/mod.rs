@@ -39,8 +39,9 @@ use std::collections::HashMap;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ElasticsearchMcpConfig {
-    /// Cluster URL
-    pub url: String,
+    /// Cluster URL (optional if dynamic URL will be provided via X-Elasticsearch-URL header)
+    #[serde(default = "default_es_url", deserialize_with = "none_if_empty_string")]
+    pub url: Option<String>,
 
     /// API key
     #[serde(default, deserialize_with = "none_if_empty_string")]
@@ -68,41 +69,112 @@ pub struct ElasticsearchMcpConfig {
     // TODO: search as resources?
 }
 
+fn default_es_url() -> Option<String> {
+    Some("http://localhost:9200".to_string())
+}
+
 // A wrapper around an ES client that provides a client instance configured
-/// for a given request context (i.e. auth credentials)
+/// for a given request context (i.e. auth credentials and URL)
 #[derive(Clone)]
-pub struct EsClientProvider(Elasticsearch);
+pub struct EsClientProvider {
+    client: Elasticsearch,
+    ssl_skip_verify: bool,
+}
 
 impl EsClientProvider {
-    pub fn new(client: Elasticsearch) -> Self {
-        EsClientProvider(client)
+    pub fn new(client: Elasticsearch, ssl_skip_verify: bool) -> Self {
+        EsClientProvider { client, ssl_skip_verify }
     }
 
-    /// If the incoming request is a http request and has an `Authorization` header, use it
-    /// to authenticate to the remote ES instance.
+    /// If the incoming request is a http request and has headers for URL or Authorization,
+    /// use them to create a new client instance for the remote ES instance.
     pub fn get(&self, context: RequestContext<RoleServer>) -> Cow<'_, Elasticsearch> {
-        let client = &self.0;
+        let client = &self.client;
 
-        let Some(mut auth) = context
-            .extensions
-            .get::<Parts>()
+        let parts = context.extensions.get::<Parts>();
+        
+        // Check for custom URL header
+        let custom_url = parts
+            .and_then(|p| p.headers.get("X-Elasticsearch-URL"))
+            .and_then(|h| h.to_str().ok());
+
+        // Check for authorization header
+        let mut auth = parts
             .and_then(|p| p.headers.get(header::AUTHORIZATION))
-            .and_then(|h| h.to_str().ok())
-        else {
-            // No auth
-            return Cow::Borrowed(client);
-        };
+            .and_then(|h| h.to_str().ok());
 
-        // MCP inspector insists on sending a bearer token and prepends "Bearer" to the value provided
-        if auth.starts_with("Bearer ApiKey ") || auth.starts_with("Bearer Basic ") {
-            auth = auth.trim_start_matches("Bearer ");
+        // If neither URL nor auth is provided, return the default client
+        if custom_url.is_none() && auth.is_none() {
+            tracing::debug!("Using default Elasticsearch client configuration");
+            return Cow::Borrowed(client);
         }
 
-        let transport = client
-            .transport()
-            .clone_with_auth(Some(Credentials::AuthorizationHeader(auth.to_string())));
+        if custom_url.is_some() || auth.is_some() {
+            tracing::debug!(
+                "Dynamic configuration detected: custom_url={}, has_auth={}",
+                custom_url.is_some(),
+                auth.is_some()
+            );
+        }
 
-        Cow::Owned(Elasticsearch::new(transport))
+        // MCP inspector insists on sending a bearer token and prepends "Bearer" to the value provided
+        if let Some(auth_str) = auth {
+            if auth_str.starts_with("Bearer ApiKey ") || auth_str.starts_with("Bearer Basic ") {
+                auth = Some(auth_str.trim_start_matches("Bearer "));
+            }
+        }
+
+        // If we have a custom URL, we need to build a new transport from scratch
+        if let Some(url_str) = custom_url {
+            match self.build_client_with_url(url_str, auth) {
+                Ok(new_client) => {
+                    tracing::info!("Using dynamic Elasticsearch URL: {}", url_str);
+                    return Cow::Owned(new_client);
+                }
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to create client with custom URL '{}': {}. Falling back to default configuration.",
+                        url_str, e
+                    );
+                    // Fall back to just updating auth if we can't parse the URL
+                }
+            }
+        }
+
+        // If we only have auth (no custom URL), just clone with new auth
+        if let Some(auth_str) = auth {
+            tracing::debug!("Using dynamic authentication with default URL");
+            let transport = client
+                .transport()
+                .clone_with_auth(Some(Credentials::AuthorizationHeader(auth_str.to_string())));
+            return Cow::Owned(Elasticsearch::new(transport));
+        }
+
+        // Fallback to default client
+        Cow::Borrowed(client)
+    }
+
+    /// Build a new Elasticsearch client with a custom URL and optional auth
+    fn build_client_with_url(&self, url_str: &str, auth: Option<&str>) -> anyhow::Result<Elasticsearch> {
+        let url = Url::parse(url_str)?;
+        let pool = elasticsearch::http::transport::SingleNodeConnectionPool::new(url);
+        let mut transport = elasticsearch::http::transport::TransportBuilder::new(pool);
+        
+        if let Some(auth_str) = auth {
+            transport = transport.auth(Credentials::AuthorizationHeader(auth_str.to_string()));
+        }
+        
+        if self.ssl_skip_verify {
+            transport = transport.cert_validation(CertificateValidation::None);
+        }
+        
+        transport = transport.header(
+            USER_AGENT,
+            HeaderValue::from_str(&format!("elastic-mcp/{}", env!("CARGO_PKG_VERSION")))?,
+        );
+        
+        let transport = transport.build()?;
+        Ok(Elasticsearch::new(transport))
     }
 }
 
@@ -185,14 +257,24 @@ impl ElasticsearchMcp {
             None
         };
 
-        let url = config.url.as_str();
-        if url.is_empty() {
+        // Use the configured URL or fall back to default
+        let url_str = config.url.as_ref()
+            .ok_or_else(|| anyhow::Error::msg("Elasticsearch URL is not configured and no default is available"))?;
+
+        if url_str.is_empty() {
             return Err(anyhow::Error::msg("Elasticsearch URL is empty"));
         }
 
-        let mut url = Url::parse(url)?;
+        let mut url = Url::parse(url_str)?;
         if container_mode {
             rewrite_localhost(&mut url)?;
+        }
+
+        tracing::info!("Default Elasticsearch URL: {}", url);
+        if creds.is_some() {
+            tracing::info!("Using configured authentication credentials");
+        } else {
+            tracing::info!("No default authentication configured (can be provided dynamically via headers)");
         }
 
         let pool = elasticsearch::http::transport::SingleNodeConnectionPool::new(url.clone());
@@ -210,7 +292,7 @@ impl ElasticsearchMcp {
         let transport = transport.build()?;
         let es_client = Elasticsearch::new(transport);
 
-        Ok(base_tools::EsBaseTools::new(es_client))
+        Ok(base_tools::EsBaseTools::new(es_client, config.ssl_skip_verify))
     }
 }
 
