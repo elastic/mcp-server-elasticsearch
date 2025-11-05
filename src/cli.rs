@@ -27,7 +27,7 @@ use std::path::PathBuf;
 #[command(version)]
 pub struct Cli {
     /// Container mode: change default http address, rewrite localhost to the host's address
-    #[clap(global=true, long, env = "CONTAINER_MODE")]
+    #[clap(global = true, long, env = "CONTAINER_MODE")]
     pub container_mode: bool,
 
     #[clap(subcommand)]
