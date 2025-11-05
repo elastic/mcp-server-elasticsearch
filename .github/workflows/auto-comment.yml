@@ -20,6 +20,6 @@ jobs:
             github.rest.issues.createComment({
               owner,
               repo,
-              issue_number: context.payload.issue.number,
+              issue_number: context.payload.issue?.number ?? context.payload.pull_request?.number,
               body: commentBody
             });
