@@ -151,8 +151,37 @@ To enable both streamable-HTTP and SSE transports, use the `--sse` flag:
 docker run --rm -e ES_URL -e ES_API_KEY -p 8080:8080 docker.elastic.co/mcp/elasticsearch http --sse
 ```
 
-If for some reason your execution environment doesn't allow passing parameters to the container, they can be passed
-using the `CLI_ARGS` environment variable: `docker run --rm -e ES_URL -e ES_API_KEY -e CLI_ARGS="http --sse" -p 8080:8080...`
+#### Environment Variable Configuration
+
+For containerized environments (Docker, Kubernetes, etc.) where passing command-line arguments may be difficult, you can use environment variables:
+
+**Option 1: Using specific environment variables**
+```bash
+docker run --rm \
+  -e ES_URL=https://my-cluster.es.io:9200 \
+  -e ES_API_KEY=your-api-key \
+  -e CONTAINER_MODE=true \
+  -e ENABLE_SSE=true \
+  -e HTTP_ADDRESS=0.0.0.0:8080 \
+  -p 8080:8080 \
+  docker.elastic.co/mcp/elasticsearch http
+```
+
+**Option 2: Using CLI_ARGS for complex configurations**
+```bash
+docker run --rm \
+  -e ES_URL=https://my-cluster.es.io:9200 \
+  -e ES_API_KEY=your-api-key \
+  -e CLI_ARGS="--container-mode http --sse" \
+  -p 8080:8080 \
+  docker.elastic.co/mcp/elasticsearch
+```
+
+**Available environment variables:**
+- `CONTAINER_MODE` - Set to `true` to enable container mode (binds to 0.0.0.0, rewrites localhost)
+- `ENABLE_SSE` - Set to `true` to enable SSE transport on `/mcp/sse`
+- `HTTP_ADDRESS` - Override the listen address (e.g., `0.0.0.0:8080`)
+- `CLI_ARGS` - Pass complete command-line arguments as a string
 
 **Available Endpoints:**
 - Streamable-HTTP: `http://<host>:8080/mcp`
@@ -311,3 +340,119 @@ Add to your Gemini MCP configuration:
 ```
 
 **Note**: Replace `<mcp-server-host>` and `<mcp-server-port>` with your server's address (default port is 8080). The dynamic headers (`Authorization` and `X-Elasticsearch-URL`) are optional if you've configured defaults via environment variables.
+
+### Kubernetes Deployment
+
+For deploying to Kubernetes (including OpenShift, EKS, GKE, AKS, etc.), use environment variables for configuration:
+
+#### Example Deployment YAML
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-mcp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch-mcp
+  template:
+    metadata:
+      labels:
+        app: elasticsearch-mcp
+    spec:
+      containers:
+      - name: mcp-server
+        image: docker.elastic.co/mcp/elasticsearch:latest
+        command: ["elasticsearch-core-mcp-server"]
+        args: ["http", "--sse"]
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: ES_URL
+          value: "https://elasticsearch.example.com:9200"
+        - name: ES_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: api-key
+        - name: CONTAINER_MODE
+          value: "true"
+        - name: ENABLE_SSE
+          value: "true"
+        - name: HTTP_ADDRESS
+          value: "0.0.0.0:8080"
+        livenessProbe:
+          httpGet:
+            path: /_health/live
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /_health/ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-mcp
+spec:
+  selector:
+    app: elasticsearch-mcp
+  ports:
+  - port: 8080
+    targetPort: 8080
+    name: http
+```
+
+**Key points for Kubernetes deployment:**
+- Pass the command via `command` and `args` fields (e.g., `args: ["http", "--sse"]`)
+- Alternatively, use `CLI_ARGS` environment variable if your deployment restricts command/args
+- Use `CONTAINER_MODE=true` to bind to `0.0.0.0` instead of `127.0.0.1`
+- Store sensitive credentials in Kubernetes Secrets and reference them via `secretKeyRef`
+- Use the built-in health probes at `/_health/live` and `/_health/ready`
+- For dynamic URL/auth support, configure via headers in your client or ingress/gateway
+
+#### Alternative: Using Only Environment Variables
+
+If your Kubernetes deployment restricts modifying the container command, use the `CLI_ARGS` approach:
+
+```yaml
+      containers:
+      - name: mcp-server
+        image: docker.elastic.co/mcp/elasticsearch:latest
+        # No command/args specified - uses container's default ENTRYPOINT
+        env:
+        - name: CLI_ARGS
+          value: "http --sse"
+        - name: ES_URL
+          value: "https://elasticsearch.example.com:9200"
+        - name: ES_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: elasticsearch-credentials
+              key: api-key
+        # ... rest of env vars same as above
+```
+
+Or use individual environment variables for maximum compatibility:
+
+```yaml
+      containers:
+      - name: mcp-server
+        image: docker.elastic.co/mcp/elasticsearch:latest
+        args: ["http"]  # Just the subcommand
+        env:
+        - name: ENABLE_SSE
+          value: "true"
+        - name: CONTAINER_MODE
+          value: "true"
+        - name: HTTP_ADDRESS
+          value: "0.0.0.0:8080"
+        # ... rest of configuration
+```
