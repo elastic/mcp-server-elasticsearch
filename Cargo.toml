@@ -44,7 +44,7 @@ axum = "0.8"
 http = "1.3.1"
 
 # Schemars: keep in sync with rmcp
-schemars = { version = "0.8", features = ["chrono"] }
+schemars = { version = "0.9", features = ["chrono"] }
 
 reqwest = "0.12"
 futures-util = "0.3"
