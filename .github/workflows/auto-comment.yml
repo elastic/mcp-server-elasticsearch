@@ -9,10 +9,15 @@ jobs:
   add-comment:
     runs-on: ubuntu-latest
     steps:
+      - name: Fetch ephemeral GitHub token
+        id: fetch-token
+        uses: elastic/ci-gh-actions/fetch-github-token@8a7604dfdd4e7fe21f969bfe9ff96e17635ea577 # v1.0.0
+        with:
+          vault-instance: "ci-prod"
       - name: Add comment
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          github-token: ${{ steps.fetch-token.outputs.token }}
           script: |
             const { owner, repo } = context.repo;
             const commentBody = "**Deprecation warning:** This MCP server is deprecated and will only receive critical security updates going forward. It has been superseded by [Elastic Agent Builder](https://ela.st/agent-builder-docs)'s [MCP endpoint](https://ela.st/agent-builder-mcp), which is available in Elastic 9.2.0+ and Elasticsearch Serverless projects.";
