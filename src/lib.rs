@@ -97,7 +97,7 @@ pub async fn setup_services(config: &Option<PathBuf>, container_mode: bool) -> a
         // Built-in default configuration, based on env variables.
         r#"{
             "elasticsearch": {
-                "url": "${ES_URL}",
+                "url": "${ES_URL:http://localhost:9200}",
                 "api_key": "${ES_API_KEY:}",
                 "username": "${ES_USERNAME:}",
                 "password": "${ES_PASSWORD:}",
