@@ -58,7 +58,7 @@ features = [
     "client", "transport-sse-client", "transport-streamable-http-client", "transport-child-process",
 ]
 # Keep rev in sync with rmcp-macros below
-version = "0.2.1"
+version = "0.12.0"
 
 [dependencies.rmcp-macros]
 version = "0.2.1"
