@@ -69,12 +69,24 @@ struct SearchParams {
 
     /// Complete Elasticsearch query DSL object that can include query, size, from, sort, etc.
     query_body: Map<String, Value>, // note: just Value doesn't work, as Claude would send a string
+
+    /// Query timeout (e.g., "30s", "2m", "1m30s"). Defaults to "120s"
+    #[serde(default = "default_timeout")]
+    timeout: String,
+}
+
+fn default_timeout() -> String {
+    "120s".to_string()
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct EsqlQueryParams {
     /// Complete Elasticsearch ES|QL query
     query: String,
+
+    /// Query timeout (e.g., "30s", "2m", "1m30s"). Defaults to "120s"
+    #[serde(default = "default_timeout")]
+    timeout: String,
 }
 
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
@@ -158,6 +170,7 @@ impl EsBaseTools {
             index,
             fields,
             query_body,
+            timeout,
         }): Parameters<SearchParams>,
     ) -> Result<CallToolResult, rmcp::Error> {
         let es_client = self.es_client.get(req_ctx);
@@ -178,6 +191,7 @@ impl EsBaseTools {
         let response = es_client
             .search(SearchParts::Index(&[&index]))
             .body(query_body)
+            .timeout(&timeout)
             .send()
             .await;
 
@@ -226,11 +240,14 @@ impl EsBaseTools {
     async fn esql(
         &self,
         req_ctx: RequestContext<RoleServer>,
-        Parameters(EsqlQueryParams { query }): Parameters<EsqlQueryParams>,
+        Parameters(EsqlQueryParams { query, timeout }): Parameters<EsqlQueryParams>,
     ) -> Result<CallToolResult, rmcp::Error> {
         let es_client = self.es_client.get(req_ctx);
 
-        let request = EsqlQueryRequest { query };
+        let request = EsqlQueryRequest {
+            query,
+            query_timeout: Some(timeout),
+        };
 
         let response = es_client.esql().query().body(request).send().await;
         let response: EsqlQueryResponse = read_json(response).await?;
@@ -382,6 +399,8 @@ pub struct MappingProperty {
 #[derive(Serialize, Deserialize)]
 pub struct EsqlQueryRequest {
     pub query: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub query_timeout: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
