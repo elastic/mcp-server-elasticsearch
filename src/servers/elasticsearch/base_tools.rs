@@ -366,13 +366,13 @@ pub struct Mappings {
 pub struct Mapping {
     #[serde(rename = "_meta", skip_serializing_if = "Option::is_none")]
     pub meta: Option<JsonObject>,
-    properties: HashMap<String, MappingProperty>,
+    pub properties: HashMap<String, MappingProperty>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct MappingProperty {
-    #[serde(rename = "type")]
-    pub type_: String,
+    #[serde(rename = "type", default)]
+    pub type_: Option<String>,
     #[serde(flatten)]
     pub settings: HashMap<String, serde_json::Value>,
 }
