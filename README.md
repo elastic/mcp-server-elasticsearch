@@ -97,7 +97,7 @@ The configuration for Claude Desktop is as follows:
 
 ### Using with Gemini CLI
 
-You can seamlessly install and configure the Elasticsearch MCP server using the Gemini CLI.
+You can seamlessly install and configure the Elasticsearch MCP server using the latest Gemini CLI.
 
 ```bash
 gemini extensions install [https://github.com/elastic/mcp-server-elasticsearch](https://github.com/elastic/mcp-server-elasticsearch)
