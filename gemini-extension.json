@@ -1,0 +1,59 @@
+{
+  "name": "elasticsearch",
+  "version": "1.0.0",
+  "description": "Elasticsearch MCP Server for interacting with your Elasticsearch data via natural language.",
+  "settings": [
+    {
+      "name": "Elasticsearch URL",
+      "description": "The URL of your Elasticsearch cluster (e.g., http://localhost:9200).",
+      "envVar": "ES_URL",
+      "sensitive": false
+    },
+    {
+      "name": "Elasticsearch API Key",
+      "description": "API key for authentication (optional if using username/password).",
+      "envVar": "ES_API_KEY",
+      "sensitive": true
+    },
+    {
+      "name": "Elasticsearch Username",
+      "description": "Username for basic authentication (optional if using API key).",
+      "envVar": "ES_USERNAME",
+      "sensitive": false
+    },
+    {
+      "name": "Elasticsearch Password",
+      "description": "Password for basic authentication (optional if using API key).",
+      "envVar": "ES_PASSWORD",
+      "sensitive": true
+    },
+    {
+      "name": "Skip SSL Verification",
+      "description": "Set to 'true' to skip SSL/TLS certificate verification.",
+      "envVar": "ES_SSL_SKIP_VERIFY",
+      "sensitive": false
+    }
+  ],
+  "mcpServers": {
+    "elasticsearch-mcp-server": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-i",
+        "--rm",
+        "-e",
+        "ES_URL",
+        "-e",
+        "ES_API_KEY",
+        "-e",
+        "ES_USERNAME",
+        "-e",
+        "ES_PASSWORD",
+        "-e",
+        "ES_SSL_SKIP_VERIFY",
+        "docker.elastic.co/mcp/elasticsearch",
+        "stdio"
+      ]
+    }
+  }
+}
