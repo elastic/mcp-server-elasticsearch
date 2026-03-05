@@ -95,6 +95,14 @@ The configuration for Claude Desktop is as follows:
 }
 ```
 
+### Using with Gemini CLI
+
+You can seamlessly install and configure the Elasticsearch MCP server using the Gemini CLI.
+
+```bash
+gemini extensions install [https://github.com/elastic/mcp-server-elasticsearch](https://github.com/elastic/mcp-server-elasticsearch)
+
+```
 ### Using the streamable-HTTP and SSE protocols
 
 Note: streamable-HTTP is recommended, as [SSE is deprecated](https://modelcontextprotocol.io/docs/concepts/transports#server-sent-events-sse-deprecated).
