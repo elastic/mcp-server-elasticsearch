@@ -17,8 +17,8 @@ Before you start, ensure you have:
 
 - An Elasticsearch cluster (version 8.x or 9.x) accessible from your AWS environment
 - Elasticsearch authentication credentials:
-  - An API key, or
-  - A username and password pair
+  - An [API key](https://www.elastic.co/docs/deploy-manage/api-keys), or
+  - A [username](https://www.elastic.co/docs/deploy-manage/users-roles) and password pair
 - Docker installed and running in your AWS environment (for example, on an EC2 instance or in a container service)
 - An MCP client configured (such as Claude Desktop, Cursor, VS Code, or another MCP-compatible tool)
 - Network connectivity between your deployment environment and your Elasticsearch cluster
