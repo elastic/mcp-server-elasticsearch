@@ -6,7 +6,8 @@
 
 ## Use the Elasticsearch MCP Server for AI Agents
 
-The Elasticsearch MCP Server connects your AI agents to Elasticsearch data using the Model Context Protocol (MCP). It enables natural language interactions with your Elasticsearch indices, allowing agents to query, analyze, and retrieve data without custom APIs.
+The Elasticsearch MCP Server connects your AI agents to Elasticsearch data using the [Model Context Protocol](https://modelcontextprotocol.io/docs/getting-started/intro) (MCP).
+It enables natural language interactions with your Elasticsearch indices, allowing agents to query, analyze, and retrieve data without custom APIs.
 
 Follow these steps to deploy and configure the Elasticsearch MCP Server container image from AWS Marketplace.
 
@@ -35,8 +36,8 @@ The Elasticsearch MCP Server is provided as a Docker container image available f
 
 The server supports two protocols:
 
-- **stdio**: Direct communication between the MCP client and server. Use this when your client supports stdio and runs in the same environment.
-- **streamable-HTTP**: HTTP-based protocol recommended for web integrations, stateful sessions, and concurrent clients.
+- [stdio](https://modelcontextprotocol.io/specification/latest/basic/transports#stdio): Direct communication between the MCP client and server. Use this when your client supports stdio and runs in the same environment.
+- [streamable-HTTP](https://modelcontextprotocol.io/specification/latest/basic/transports#streamable-http): HTTP-based protocol recommended for web integrations, stateful sessions, and concurrent clients.
 
 > **Note:** Server-Sent Events (SSE) is deprecated. Use streamable-HTTP instead.
 
@@ -270,4 +271,3 @@ Your agent can use these tools to interact with your Elasticsearch data through 
 
 - Learn about AI-powered features available in the Elastic platform
 - Explore Agent Builder for building custom AI agents with Elasticsearch
-- Review [Model Context Protocol documentation](https://modelcontextprotocol.io/docs/getting-started/intro) for advanced MCP configuration
