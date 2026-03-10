@@ -132,8 +132,7 @@ If you're using Claude Desktop (free edition) which only supports the stdio prot
    ```bash
    uv tool install mcp-proxy
    ```
-
-   The executable is installed in `~/.local/bin`.
+   For alternative installation options, refer to [mcp-proxy/README.md](https://github.com/sparfenyuk/mcp-proxy/blob/main/README.md).
 
 2. Add this configuration to Claude Desktop:
 
