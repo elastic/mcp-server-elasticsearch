@@ -18,7 +18,7 @@ WORKDIR /app
 COPY Cargo.toml Cargo.lock ./
 
 # Cache dependencies: same idea as
-# https://github.com/elastic/mcp-server-elasticsearch/blob/b2912b2ba544060962c7fabf38eb36cc940e9098/Dockerfile
+# https://github.com/igabi/mcp-server-elasticsearch/blob/b2912b2ba544060962c7fabf38eb36cc940e9098/Dockerfile
 # plus a git cache for the elasticsearch crate (git dependency in Cargo.lock).
 RUN --mount=type=cache,target=/usr/local/cargo/git \
     --mount=type=cache,target=/usr/local/cargo/registry \
@@ -41,6 +41,9 @@ RUN --mount=type=cache,target=/usr/local/cargo/git \
 #--------------------------------------------------------------------------------------------------
 
 FROM cgr.dev/chainguard/wolfi-base:latest
+
+ARG VERSION=0.0.0-dev
+ENV ELASTIC_MCP_VERSION=${VERSION}
 
 COPY --from=builder /out/elasticsearch-core-mcp-server /usr/local/bin/elasticsearch-core-mcp-server
 

@@ -5,8 +5,8 @@ edition = "2024"
 authors = ["Elastic.co"]
 license-file = "LICENSE"
 description = "MCP server for core Elastisearch features"
-homepage = "https://github.com/elastic/mcp-server-elasticsearch"
-repository = "https://github.com/elastic/mcp-server-elasticsearch"
+homepage = "https://github.com/igabi/mcp-server-elasticsearch"
+repository = "https://github.com/igabi/mcp-server-elasticsearch"
 
 default-run = "elasticsearch-core-mcp-server"
 
@@ -35,7 +35,7 @@ tracing-subscriber = { version = "0.3", features = [
     "fmt",
 ]}
 
-elasticsearch = { version = "9.0.0-alpha.1", git = "https://github.com/elastic/elasticsearch-rs", branch = "new-with-creds" }
+elasticsearch = "9.1.0-alpha.1"
 
 # Async and http
 tokio = { version = "1", features = ["macros", "rt", "rt-multi-thread", "io-std", "signal", "process"] }

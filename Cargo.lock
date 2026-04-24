@@ -482,8 +482,9 @@ checksum = "48c757948c5ede0e46177b7add2e67155f70e33c07fea8284df6576da70b3719"
 
 [[package]]
 name = "elasticsearch"
-version = "9.0.0-alpha.1"
-source = "git+https://github.com/elastic/elasticsearch-rs?branch=new-with-creds#8eb4e7fc98046882de46536b3a25291511e2ca75"
+version = "9.1.0-alpha.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "12bb303aa6e1d28c0c86b6fbfe484fd0fd3f512629aeed1ac4f6b85f81d9834a"
 dependencies = [
  "base64",
  "bytes",

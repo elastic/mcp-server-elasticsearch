@@ -1,0 +1,34 @@
+# Copyright Elasticsearch B.V. and contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Matches .github/workflows/ci.yml (format, clippy, test).
+# Install:  pipx install pre-commit  &&  pre-commit install
+# Optional:  pre-commit install --hook-type pre-commit --hook-type pre-push
+# Skip slow hooks:  SKIP=cargo-test git commit
+#
+# https://pre-commit.com
+
+default_install_hook_types: [pre-commit]
+fail_fast: true
+
+repos:
+  - repo: local
+    hooks:
+      - id: cargo-fmt
+        name: cargo fmt
+        entry: cargo fmt --all -- --check
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: cargo-clippy
+        name: cargo clippy
+        entry: cargo clippy --all-targets --all-features --locked -- -D warnings
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: cargo-test
+        name: cargo test
+        entry: cargo test --locked
+        language: system
+        pass_filenames: false
+        always_run: true

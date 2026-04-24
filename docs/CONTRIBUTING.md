@@ -1,7 +1,7 @@
 # Contributing
 
-[fork]: https://github.com/elastic/mcp-server-elasticsearch/fork
-[pr]: https://github.com/elastic/mcp-server-elasticsearch/compare
+[fork]: https://github.com/igabi/mcp-server-elasticsearch/fork
+[pr]: https://github.com/igabi/mcp-server-elasticsearch/compare
 [code-of-conduct]: https://www.elastic.co/community/codeofconduct
 
 Elasticsearch MCP Server is open source, and we love to receive contributions from our community — you!

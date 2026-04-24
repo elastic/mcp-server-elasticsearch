@@ -26,7 +26,7 @@ Before you start, ensure you have:
 > [!NOTE]
 >
 > These instructions apply to Elasticsearch MCP Server 0.4.0 and later.
-> For versions 0.3.1 and earlier, refer to the [README for v0.3.1](https://github.com/elastic/mcp-server-elasticsearch/tree/v0.3.1).
+> For versions 0.3.1 and earlier, refer to the [README for v0.3.1](https://github.com/igabi/mcp-server-elasticsearch/tree/v0.3.1).
 
 ### Deploy the Elasticsearch MCP Server
 
