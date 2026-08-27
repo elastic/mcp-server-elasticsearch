@@ -45,9 +45,17 @@ async fn main() -> anyhow::Result<()> {
         Cli::parse()
     };
 
-    // Initialize the tracing subscriber with file and stdout logging
+    // Initialize the tracing subscriber with file and stdout logging.
+    //
+    // Default to ERROR: at INFO this logs a line per request, which is noise
+    // in a deployed server. RUST_LOG overrides it (e.g. RUST_LOG=debug to see
+    // response bodies when a tool call fails).
+    //
+    // Note this is a plain fallback, not add_directive(): a bare directive
+    // added after from_default_env() replaces the bare directive RUST_LOG
+    // parsed to, so `add_directive(INFO)` silently overrode RUST_LOG=error.
     tracing_subscriber::fmt()
-        .with_env_filter(EnvFilter::from_default_env().add_directive(tracing::Level::INFO.into()))
+        .with_env_filter(EnvFilter::try_from_default_env().unwrap_or_else(|_| EnvFilter::new("error")))
         .with_writer(std::io::stderr)
         .with_ansi(false)
         .init();
