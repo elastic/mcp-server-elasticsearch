@@ -134,7 +134,16 @@ impl EsBaseTools {
         let response: MappingResponse = read_json(response).await?;
 
         // use the first mapping (we can have many if the name is a wildcard)
-        let mapping = response.values().next().unwrap();
+        // ES returns HTTP 200 with an empty body `{}` for a wildcard that matches
+        // zero indices (allow_no_indices defaults to true), so the map can be
+        // empty. A bare unwrap() would panic and orphan the request task while the
+        // HTTP transport keeps the connection open (issue #266).
+        let Some(mapping) = response.values().next() else {
+            return Err(rmcp::Error::invalid_params(
+                "no indices matched the given pattern",
+                None,
+            ));
+        };
 
         Ok(CallToolResult::success(vec![
             Content::text(format!("Mappings for index {index}:")),
