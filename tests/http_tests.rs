@@ -21,7 +21,8 @@ use axum::extract::Path;
 use elasticsearch_core_mcp_server::cli;
 use futures_util::StreamExt;
 use http::HeaderMap;
-use http::header::{ACCEPT, CONTENT_TYPE};
+use http::StatusCode;
+use http::header::{ACCEPT, ALLOW, CONTENT_TYPE};
 use reqwest::Client;
 use rmcp::model::ToolAnnotations;
 use serde::Deserialize;
@@ -77,6 +78,37 @@ async fn http_tool_list() -> anyhow::Result<()> {
     assert!(names.contains(&"search"));
     assert!(names.contains(&"list_indices"));
     assert!(names.contains(&"get_mappings"));
+    Ok(())
+}
+
+/// The server runs stateless, so it cannot serve the optional GET listening
+/// stream: it must decline with 405 rather than rmcp's 401, which clients read as
+/// an auth failure and retry in a loop.
+#[tokio::test]
+async fn http_get_declined() -> anyhow::Result<()> {
+    let addr = find_address()?;
+
+    let cli = cli::Cli {
+        container_mode: false,
+        command: cli::Command::Http(cli::HttpCommand {
+            config: None,
+            address: Some(addr),
+            sse: false,
+        }),
+    };
+
+    tokio::spawn(async move { cli.run().await });
+
+    let url = format!("http://127.0.0.1:{}/mcp", addr.port());
+
+    let client = Client::builder().build()?;
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
+    let response = client.get(url).header(ACCEPT, "text/event-stream").send().await?;
+
+    assert_eq!(response.status(), StatusCode::METHOD_NOT_ALLOWED);
+    assert_eq!(response.headers().get(ALLOW).unwrap().to_str()?, "POST, DELETE");
+
     Ok(())
 }
 
