@@ -20,6 +20,7 @@
 use crate::utils::rmcp_ext::ServerProvider;
 use axum::Router;
 use axum::http::StatusCode;
+use axum::http::header::ALLOW;
 use axum::routing::get;
 use rmcp::transport::sse_server::SseServerConfig;
 use rmcp::transport::streamable_http_server::session::local::LocalSessionManager;
@@ -74,7 +75,29 @@ impl HttpProtocol {
             // "double-Arc" by having
             let sh_service =
                 StreamableHttpService::new(move || Ok(server_provider()), config.session_manager, sh_config);
-            Router::new().route_service("/", sh_service)
+
+            if config.stateful_mode {
+                Router::new().route_service("/", sh_service)
+            } else {
+                // After initializing, clients open a GET stream to listen for
+                // server-initiated messages. It is optional in the spec, and a server
+                // that doesn't offer it declines with 405. rmcp instead answers 401
+                // ("Session ID is required") whenever the Mcp-Session-Id header is
+                // missing -- but in stateless mode no session id is ever issued, so
+                // that header can never be present and the GET can only ever 401.
+                // Clients read the 401 as an auth failure rather than a declined
+                // stream: the Typescript SDK re-runs its OAuth flow and retries the
+                // GET, which 401s again, and the client tears the connection down and
+                // reconnects in a loop. Decline the GET ourselves so clients move on.
+                let decline_get = get(async || {
+                    (
+                        StatusCode::METHOD_NOT_ALLOWED,
+                        [(ALLOW, "POST, DELETE")],
+                        "Method Not Allowed\n",
+                    )
+                });
+                Router::new().route("/", decline_get.fallback_service(sh_service))
+            }
         };
 
         // Create an SSE router
