@@ -84,25 +84,46 @@ async fn http_tool_list() -> anyhow::Result<()> {
 #[tokio::test]
 async fn end_to_end() -> anyhow::Result<()> {
     // Start an ES mock that will reply to list_indices
-    let router = Router::new().route(
-        "/_cat/indices/{index}",
-        axum::routing::get(async move |headers: HeaderMap, Path(index): Path<String>| {
-            // Check parameter forwarding
-            assert_eq!(index, "test-index");
-            // Check API key
-            assert_eq!(
-                headers.get("Authorization").unwrap().to_str().unwrap(),
-                "ApiKey value-from-the-test"
-            );
-            axum::Json(json!([
-              {
-                "index": "test-index",
-                "status": "open",
-                "docs.count": "100"
-              }
-            ]))
-        }),
-    );
+    let router = Router::new()
+        .route(
+            "/_cat/indices/{index}",
+            axum::routing::get(async move |headers: HeaderMap, Path(index): Path<String>| {
+                // Check parameter forwarding
+                assert_eq!(index, "test-index");
+                // Check API key
+                assert_eq!(
+                    headers.get("Authorization").unwrap().to_str().unwrap(),
+                    "ApiKey value-from-the-test"
+                );
+                axum::Json(json!([
+                  {
+                    "index": "test-index",
+                    "status": "open",
+                    "docs.count": "100"
+                  }
+                ]))
+            }),
+        )
+        .route(
+            "/{index}/_mapping",
+            axum::routing::get(async move |Path(index): Path<String>| {
+                assert_eq!(index, "test-index");
+                axum::Json(json!({
+                    "test-index": {
+                        "mappings": {
+                            "properties": {
+                                "message": { "type": "text" },
+                                "user": {
+                                    "properties": {
+                                        "screen_name": { "type": "keyword" }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }))
+            }),
+        );
 
     let listener = tokio::net::TcpListener::bind(LOCALHOST_0).await?;
 
@@ -158,6 +179,40 @@ async fn end_to_end() -> anyhow::Result<()> {
     assert_eq!(
         response_body["result"]["content"][1]["text"],
         "[{\"index\":\"test-index\",\"status\":\"open\",\"docs.count\":100}]"
+    );
+
+    let mapping_body = json!({
+        "jsonrpc": "2.0",
+        "id": 2,
+        "method": "tools/call",
+        "params": {
+            "name": "get_mappings",
+            "arguments": {
+                "index": "test-index"
+            }
+        }
+    });
+
+    let response = client
+        .post(&url)
+        .header(CONTENT_TYPE, "application/json")
+        .header(ACCEPT, "application/json, text/event-stream")
+        .header("Authorization", "ApiKey value-from-the-test")
+        .json(&mapping_body)
+        .send()
+        .await?
+        .error_for_status()?;
+
+    let mapping_response: serde_json::Value = parse_response(response).await?;
+    assert_eq!(
+        mapping_response["result"]["content"][0]["text"],
+        "Mappings for index test-index:"
+    );
+    assert!(
+        mapping_response["result"]["content"][1]["text"]
+            .as_str()
+            .unwrap()
+            .contains("\"user\":{\"properties\"")
     );
 
     Ok(())

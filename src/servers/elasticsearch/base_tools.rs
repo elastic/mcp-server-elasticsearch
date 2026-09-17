@@ -21,16 +21,13 @@ use elasticsearch::indices::IndicesGetMappingParts;
 use elasticsearch::{Elasticsearch, SearchParts};
 use indexmap::IndexMap;
 use rmcp::handler::server::tool::{Parameters, ToolRouter};
-use rmcp::model::{
-    CallToolResult, Content, Implementation, JsonObject, ProtocolVersion, ServerCapabilities, ServerInfo,
-};
+use rmcp::model::{CallToolResult, Content, Implementation, ProtocolVersion, ServerCapabilities, ServerInfo};
 use rmcp::service::RequestContext;
 use rmcp::{RoleServer, ServerHandler};
 use rmcp_macros::{tool, tool_handler, tool_router};
 use serde::{Deserialize, Serialize};
 use serde_aux::prelude::*;
 use serde_json::{Map, Value, json};
-use std::collections::HashMap;
 
 #[derive(Clone)]
 pub struct EsBaseTools {
@@ -355,27 +352,7 @@ pub struct CatShardsResponse {
 
 //----- Index mappings
 
-pub type MappingResponse = HashMap<String, Mappings>;
-
-#[derive(Serialize, Deserialize)]
-pub struct Mappings {
-    pub mappings: Mapping,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct Mapping {
-    #[serde(rename = "_meta", skip_serializing_if = "Option::is_none")]
-    pub meta: Option<JsonObject>,
-    properties: HashMap<String, MappingProperty>,
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct MappingProperty {
-    #[serde(rename = "type")]
-    pub type_: String,
-    #[serde(flatten)]
-    pub settings: HashMap<String, serde_json::Value>,
-}
+pub type MappingResponse = Map<String, Value>;
 
 //----- ES|QL
 
