@@ -89,7 +89,12 @@ impl EsBaseTools {
     /// Tool: list indices
     #[tool(
         description = "List all available Elasticsearch indices",
-        annotations(title = "List ES indices", read_only_hint = true)
+        annotations(
+            title = "List ES indices",
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
     )]
     async fn list_indices(
         &self,
@@ -117,7 +122,12 @@ impl EsBaseTools {
     /// Tool: get mappings for an index
     #[tool(
         description = "Get field mappings for a specific Elasticsearch index",
-        annotations(title = "Get ES index mappings", read_only_hint = true)
+        annotations(
+            title = "Get ES index mappings",
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
     )]
     async fn get_mappings(
         &self,
@@ -149,7 +159,12 @@ impl EsBaseTools {
     /// request property to narrow down the data returned and reduce their context size
     #[tool(
         description = "Perform an Elasticsearch search with the provided query DSL.",
-        annotations(title = "Elasticsearch search DSL query", read_only_hint = true)
+        annotations(
+            title = "Elasticsearch search DSL query",
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
     )]
     async fn search(
         &self,
@@ -221,7 +236,12 @@ impl EsBaseTools {
     /// Tool: ES|QL
     #[tool(
         description = "Perform an Elasticsearch ES|QL query.",
-        annotations(title = "Elasticsearch ES|QL query", read_only_hint = true)
+        annotations(
+            title = "Elasticsearch ES|QL query",
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
     )]
     async fn esql(
         &self,
@@ -255,7 +275,12 @@ impl EsBaseTools {
     // Tool: get shard information
     #[tool(
         description = "Get shard information for all or specific indices.",
-        annotations(title = "Get ES shard information", read_only_hint = true)
+        annotations(
+            title = "Get ES shard information",
+            read_only_hint = true,
+            destructive_hint = false,
+            open_world_hint = false
+        )
     )]
     async fn get_shards(
         &self,
@@ -396,4 +421,33 @@ pub struct EsqlQueryResponse {
     pub is_partial: Option<bool>,
     pub columns: Vec<Column>,
     pub values: Vec<Vec<Value>>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::EsBaseTools;
+
+    /// The MCP annotation defaults fall on the dangerous side: a tool that does
+    /// not set `read_only_hint` is taken to modify its environment, one that
+    /// does not set `destructive_hint` is taken to destroy data, and one that
+    /// does not set `open_world_hint` is taken to reach an open-ended set of
+    /// entities. Every tool here reads from the one configured cluster, so a
+    /// new tool that cannot say the same has to fail this rather than ship
+    /// with the defaults.
+    #[test]
+    fn every_tool_declares_its_safety_hints() {
+        let tools = EsBaseTools::tool_router().list_all();
+        assert!(!tools.is_empty(), "no tools registered");
+
+        for tool in tools {
+            let annotations = tool
+                .annotations
+                .as_ref()
+                .unwrap_or_else(|| panic!("tool '{}' has no annotations", tool.name));
+
+            assert_eq!(annotations.read_only_hint, Some(true), "tool '{}'", tool.name);
+            assert_eq!(annotations.destructive_hint, Some(false), "tool '{}'", tool.name);
+            assert_eq!(annotations.open_world_hint, Some(false), "tool '{}'", tool.name);
+        }
+    }
 }
