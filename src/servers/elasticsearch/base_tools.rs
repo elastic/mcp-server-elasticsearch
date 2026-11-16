@@ -134,7 +134,10 @@ impl EsBaseTools {
         let response: MappingResponse = read_json(response).await?;
 
         // use the first mapping (we can have many if the name is a wildcard)
-        let mapping = response.values().next().unwrap();
+        let mapping = response
+            .values()
+            .next()
+            .ok_or_else(|| rmcp::Error::internal_error(format!("No mappings found for index {index}"), None))?;
 
         Ok(CallToolResult::success(vec![
             Content::text(format!("Mappings for index {index}:")),
@@ -326,7 +329,8 @@ pub struct TotalHits {
 
 #[derive(Serialize, Deserialize)]
 pub struct Hit {
-    #[serde(rename = "_source")]
+    /// Absent when the query disables `_source` or only asks for stored/docvalue fields
+    #[serde(rename = "_source", default)]
     pub source: Value,
 }
 
@@ -335,9 +339,16 @@ pub struct Hit {
 #[derive(Serialize, Deserialize)]
 pub struct CatIndexResponse {
     pub index: String,
-    pub status: String,
-    #[serde(rename = "docs.count", deserialize_with = "deserialize_number_from_string")]
-    pub doc_count: u64,
+    /// `null` for indices whose status is unknown
+    #[serde(default)]
+    pub status: Option<String>,
+    /// `null` for closed indices
+    #[serde(
+        rename = "docs.count",
+        default,
+        deserialize_with = "deserialize_option_number_from_string"
+    )]
+    pub doc_count: Option<u64>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -364,15 +375,20 @@ pub struct Mappings {
 
 #[derive(Serialize, Deserialize)]
 pub struct Mapping {
-    #[serde(rename = "_meta", skip_serializing_if = "Option::is_none")]
+    #[serde(rename = "_meta", default, skip_serializing_if = "Option::is_none")]
     pub meta: Option<JsonObject>,
+    /// Absent for an index that has no mapped field
+    #[serde(default)]
     properties: HashMap<String, MappingProperty>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct MappingProperty {
-    #[serde(rename = "type")]
-    pub type_: String,
+    /// Absent for object fields, which only have sub-`properties`
+    #[serde(rename = "type", default, skip_serializing_if = "Option::is_none")]
+    pub type_: Option<String>,
+    /// Everything else, including the `properties` of an object field and the `fields` of a
+    /// multi-field
     #[serde(flatten)]
     pub settings: HashMap<String, serde_json::Value>,
 }
@@ -396,4 +412,93 @@ pub struct EsqlQueryResponse {
     pub is_partial: Option<bool>,
     pub columns: Vec<Column>,
     pub values: Vec<Vec<Value>>,
+}
+
+//-------------------------------------------------------------------------------------------------
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::servers::elasticsearch::decode_json;
+
+    /// Object fields have no `type`, only sub-`properties`, and an index may have no field at all.
+    #[test]
+    fn decode_mappings() {
+        let json = r#"{
+          "machine": {
+            "mappings": {
+              "properties": {
+                "fqdn": { "type": "keyword" },
+                "name": { "type": "text", "fields": { "keyword": { "type": "keyword" } } },
+                "owner": {
+                  "properties": {
+                    "email": { "type": "keyword" },
+                    "id": { "type": "long" }
+                  }
+                }
+              }
+            }
+          },
+          "empty-index": {
+            "mappings": {}
+          }
+        }"#;
+
+        let response: MappingResponse = decode_json(json).unwrap();
+
+        let machine = &response["machine"].mappings;
+        assert_eq!(machine.properties["fqdn"].type_.as_deref(), Some("keyword"));
+        assert_eq!(machine.properties["owner"].type_, None);
+        assert!(machine.properties["owner"].settings.contains_key("properties"));
+        assert!(machine.properties["name"].settings.contains_key("fields"));
+
+        assert!(response["empty-index"].mappings.properties.is_empty());
+    }
+
+    /// A closed index reports no doc count and no status.
+    #[test]
+    fn decode_cat_indices() {
+        let json = r#"[
+          { "index": "open-index", "status": "open", "docs.count": "1234" },
+          { "index": "closed-index", "status": null, "docs.count": null }
+        ]"#;
+
+        let response: Vec<CatIndexResponse> = decode_json(json).unwrap();
+
+        assert_eq!(response[0].doc_count, Some(1234));
+        assert_eq!(response[0].status.as_deref(), Some("open"));
+        assert_eq!(response[1].doc_count, None);
+        assert_eq!(response[1].status, None);
+    }
+
+    /// A search that disables `_source` returns hits without it.
+    #[test]
+    fn decode_search_without_source() {
+        let json = r#"{
+          "hits": {
+            "total": { "value": 2, "relation": "eq" },
+            "hits": [
+              { "_index": "machine", "_id": "1", "fields": { "fqdn": ["a.example.com"] } }
+            ]
+          }
+        }"#;
+
+        let response: SearchResult = decode_json(json).unwrap();
+
+        assert_eq!(response.hits.total.map(|t| t.value), Some(2));
+        assert_eq!(response.hits.hits[0].source, Value::Null);
+    }
+
+    /// A decoding failure names the field that didn't match, not just "error decoding response body".
+    #[test]
+    fn decode_error_is_actionable() {
+        let Err(err) = decode_json::<Vec<CatShardsResponse>>(r#"[{ "shard": "0" }]"#) else {
+            panic!("expected a decoding error");
+        };
+        let message = err.to_string();
+        assert!(
+            message.contains("missing field `index`"),
+            "unexpected message: {message}"
+        );
+    }
 }

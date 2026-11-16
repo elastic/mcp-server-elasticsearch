@@ -77,6 +77,7 @@ pub async fn run_http(cmd: HttpCommand, container_mode: bool) -> anyhow::Result<
             keep_alive: None,
             stateful_mode: false,
             session_manager: Arc::new(NeverSessionManager::default()),
+            require_authorization: env_flag("MCP_REQUIRE_AUTHORIZATION"),
         },
     )
     .await?;
@@ -86,6 +87,13 @@ pub async fn run_http(cmd: HttpCommand, container_mode: bool) -> anyhow::Result<
     tokio::signal::ctrl_c().await?;
     ct.cancel();
     Ok(())
+}
+
+/// True when the environment variable is set to 1/true/yes (case-insensitive).
+fn env_flag(name: &str) -> bool {
+    std::env::var(name)
+        .map(|v| matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"))
+        .unwrap_or(false)
 }
 
 pub async fn setup_services(config: &Option<PathBuf>, container_mode: bool) -> anyhow::Result<impl Service<RoleServer> + Clone> {

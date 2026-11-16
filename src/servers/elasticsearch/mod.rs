@@ -266,12 +266,29 @@ pub fn handle_error(result: Result<Response, elasticsearch::Error>) -> Result<Re
 pub async fn read_json<T: DeserializeOwned>(
     response: Result<Response, elasticsearch::Error>,
 ) -> Result<T, rmcp::Error> {
-    // let text = read_text(response).await?;
-    // tracing::debug!("Received json {text}");
-    // serde_json::from_str(&text).map_err(internal_error)
-
     let response = handle_error(response)?;
-    response.json().await.map_err(internal_error)
+
+    // Read the body as text and deserialize it ourselves: `response.json()` turns both a
+    // truncated body and a deserialization mismatch into the same opaque reqwest error,
+    // "error decoding response body", which says nothing about what actually went wrong.
+    let text = response.text().await.map_err(|e| {
+        tracing::error!("Failed to read the Elasticsearch response body: {e:?}");
+        rmcp::Error::internal_error(format!("Failed to read the Elasticsearch response body: {e}"), None)
+    })?;
+
+    decode_json(&text)
+}
+
+/// Deserialize an Elasticsearch response body, reporting what failed to deserialize.
+///
+/// The response body is logged at debug level only: it holds cluster data that has no place in
+/// an error message sent back to the client.
+pub fn decode_json<T: DeserializeOwned>(text: &str) -> Result<T, rmcp::Error> {
+    serde_json::from_str(text).map_err(|e| {
+        tracing::error!("Failed to decode the Elasticsearch response: {e}");
+        tracing::debug!("Response body was: {text}");
+        rmcp::Error::internal_error(format!("Failed to decode the Elasticsearch response: {e}"), None)
+    })
 }
 
 #[allow(dead_code)]

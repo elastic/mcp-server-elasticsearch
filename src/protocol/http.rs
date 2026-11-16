@@ -19,7 +19,11 @@
 
 use crate::utils::rmcp_ext::ServerProvider;
 use axum::Router;
+use axum::extract::Request;
 use axum::http::StatusCode;
+use axum::http::header::{ALLOW, AUTHORIZATION, WWW_AUTHENTICATE};
+use axum::middleware::{self, Next};
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use rmcp::transport::sse_server::SseServerConfig;
 use rmcp::transport::streamable_http_server::session::local::LocalSessionManager;
@@ -48,6 +52,33 @@ pub struct HttpServerConfig<M: SessionManager = LocalSessionManager> {
 
     /// Streamable http server option
     pub session_manager: Arc<M>,
+
+    /// Reject MCP requests (under /mcp) that carry no `Authorization` header.
+    ///
+    /// The header is forwarded to Elasticsearch as the request's credentials, so
+    /// Elasticsearch still decides whether they are valid. This only stops the server
+    /// from serving anonymous callers at all (sessions, tool lists, and requests that
+    /// would otherwise reach Elasticsearch with the server's default credentials).
+    pub require_authorization: bool,
+}
+
+/// Middleware: 401 for requests without a non-empty `Authorization` header.
+async fn require_authorization(request: Request, next: Next) -> Response {
+    let has_auth = request
+        .headers()
+        .get(AUTHORIZATION)
+        .and_then(|v| v.to_str().ok())
+        .is_some_and(|v| !v.trim().is_empty());
+    if has_auth {
+        next.run(request).await
+    } else {
+        (
+            StatusCode::UNAUTHORIZED,
+            [(WWW_AUTHENTICATE, "Basic realm=\"elasticsearch-mcp\"")],
+            "Authorization required\n",
+        )
+            .into_response()
+    }
 }
 
 /// An HTTP MCP server that supports both SSE and streamable HTTP.
@@ -74,7 +105,29 @@ impl HttpProtocol {
             // "double-Arc" by having
             let sh_service =
                 StreamableHttpService::new(move || Ok(server_provider()), config.session_manager, sh_config);
-            Router::new().route_service("/", sh_service)
+
+            if config.stateful_mode {
+                Router::new().route_service("/", sh_service)
+            } else {
+                // After initializing, clients open a GET stream to listen for
+                // server-initiated messages. It is optional in the spec, and a server
+                // that doesn't offer it declines with 405. rmcp instead answers 401
+                // ("Session ID is required") whenever the Mcp-Session-Id header is
+                // missing -- but in stateless mode no session id is ever issued, so
+                // that header can never be present and the GET can only ever 401.
+                // Clients read the 401 as an auth failure rather than a declined
+                // stream: the Typescript SDK re-runs its OAuth flow and retries the
+                // GET, which 401s again, and the client tears the connection down and
+                // reconnects in a loop. Decline the GET ourselves so clients move on.
+                let decline_get = get(async || {
+                    (
+                        StatusCode::METHOD_NOT_ALLOWED,
+                        [(ALLOW, "POST, DELETE")],
+                        "Method Not Allowed\n",
+                    )
+                });
+                Router::new().route("/", decline_get.fallback_service(sh_service))
+            }
         };
 
         // Create an SSE router
@@ -106,12 +159,18 @@ impl HttpProtocol {
                 .route("/live", get(async || "Alive\n"))
         };
 
+        // MCP endpoints (SSE and streamable HTTP), optionally behind the auth check.
+        // Health, readiness and the info page stay open for probes.
+        let mut mcp_router = Router::new().nest("/sse", sse_router).merge(sh_router);
+        if config.require_authorization {
+            mcp_router = mcp_router.layer(middleware::from_fn(require_authorization));
+        }
+
         // Put all things together
         let main_router = Router::new()
             .route("/", get(hello))
             .route("/ping", get(async || (StatusCode::OK, "Ready\n")))
-            .nest("/mcp/sse", sse_router)
-            .nest("/mcp", sh_router)
+            .nest("/mcp", mcp_router)
             .nest("/_health", health_router)
             .with_state(());
 
